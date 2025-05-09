@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?><Envelope xmlns="urn:swift:xsd:envelope" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <AppHdr xmlns="urn:iso:std:iso:20022:tech:xsd:head.001.001.02">
+        <Fr>
+            <FIId>
+                <FinInstnId>
+                    <BICFI>BBMEAEADXXX</BICFI>
+                </FinInstnId>
+            </FIId>
+        </Fr>
+        <To>
+            <FIId>
+                <FinInstnId>
+                    <BICFI>HSBCSGSGXXX</BICFI>
+                </FinInstnId>
+            </FIId>
+        </To>
+        <BizMsgIdr>AES07085G4U7BTMP</BizMsgIdr>
+        <MsgDefIdr>pacs.008.001.08</MsgDefIdr>
+        <BizSvc>swift.cbprplus.02</BizSvc>
+        <CreDt>2024-11-25T06:41:09+00:00</CreDt>
+    </AppHdr>
+    <Document xmlns="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08">
+        <FIToFICstmrCdtTrf>
+            <GrpHdr>
+                <MsgId>AES07085G4U7BTMP</MsgId>
+                <CreDtTm>2024-11-25T06:41:09+00:00</CreDtTm>
+                <NbOfTxs>1</NbOfTxs>
+                <SttlmInf>
+                    <SttlmMtd>INDA</SttlmMtd>
+                </SttlmInf>
+            </GrpHdr>
+            <CdtTrfTxInf>
+                <PmtId>
+                    <InstrId>AES07085G4U7BTMP</InstrId>
+                    <EndToEndId>BYPAGMOYM2H</EndToEndId>
+                    <UETR>e0cbeea0-b3af-4a15-9c5c-db44ba10d7e9</UETR>
+                </PmtId>
+                <PmtTpInf>
+                    <SvcLvl>
+                        <Cd>G001</Cd>
+                    </SvcLvl>
+                </PmtTpInf>
+                <IntrBkSttlmAmt Ccy="SGD">10</IntrBkSttlmAmt>
+                <IntrBkSttlmDt>2025-08-08</IntrBkSttlmDt>
+                <InstdAmt Ccy="SGD">10</InstdAmt>
+                <ChrgBr>DEBT</ChrgBr>
+                <InstgAgt>
+                    <FinInstnId>
+                        <BICFI>BBMEAEADXXX</BICFI>
+                    </FinInstnId>
+                </InstgAgt>
+                <InstdAgt>
+                    <FinInstnId>
+                        <BICFI>HSBCSGSGXXX</BICFI>
+                    </FinInstnId>
+                </InstdAgt>
+                <IntrmyAgt1>
+                    <FinInstnId>
+                        <BICFI>CITISGSGXXX</BICFI>
+                    </FinInstnId>
+                </IntrmyAgt1>
+                <Dbtr>
+                    <Nm>F-31-480676</Nm>
+                    <PstlAdr>
+                        <AdrLine>AEN2-31-480676 AEN3-31-480676 AEN4-</AdrLine>
+                        <AdrLine>31-480676 AEN5-31-480676/AE</AdrLine>
+                        <AdrLine>AL MASKCRICEJXLMYDPNBBS</AdrLine>
+                    </PstlAdr>
+                </Dbtr>
+                <DbtrAcct>
+                    <Id>
+                        <IBAN>AE450200000031480676001</IBAN>
+                    </Id>
+                </DbtrAcct>
+                <DbtrAgt>
+                    <FinInstnId>
+                        <BICFI>BBMEAEADXXX</BICFI>
+                    </FinInstnId>
+                </DbtrAgt>
+                <CdtrAgt>
+                    <FinInstnId>
+                        <Nm>CRAGENTNAMEKAFULLSPACEUSEKARNAHAIOK</Nm>
+                        <PstlAdr>
+                            <AdrLine>AU/SLINE1CREDITAGENTFULLLINESUSE AD</AdrLine>
+                            <AdrLine>DRESSLINE2CREDITAGENTFULLLINESUSE A</AdrLine>
+                            <AdrLine>DDRESSLINE3CREDITAGENTFULLLINESUSE+</AdrLine>
+                        </PstlAdr>
+                    </FinInstnId>
+                </CdtrAgt>
+                <Cdtr>
+                    <Nm>CREDITNAMEKAFULLSPACEUSEKARNAHAIOKS</Nm>
+                    <PstlAdr>
+                        <AdrLine>SLINE1CREDITFULLLINECHARACTER ADDRE</AdrLine>
+                        <AdrLine>SSLINE2CREDITFULLLINECHARACTER ADDR</AdrLine>
+                        <AdrLine>ESSLINE3CREDITFULLLINECHARACTER AU+</AdrLine>
+                    </PstlAdr>
+                    <CtryOfRes>AE</CtryOfRes>
+                </Cdtr>
+                <CdtrAcct>
+                    <Id>
+                        <Othr>
+                            <Id>AEBBME021020128001</Id>
+                        </Othr>
+                    </Id>
+                </CdtrAcct>
+                <RgltryRptg>
+                    <Dtls>
+                        <Inf>/BENEFRES/AE //CBP</Inf>
+                    </Dtls>
+                </RgltryRptg>
+                <RmtInf>
+                    <Ustrd>/ROC/BYPAGMOYM2H///INST/SAMBAEACXXX///ROC/BYPAGMOYM2H</Ustrd>
+                </RmtInf>
+            </CdtTrfTxInf>
+        </FIToFICstmrCdtTrf>
+    </Document>
+</Envelope>

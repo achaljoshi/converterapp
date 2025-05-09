@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <h3>Welcome, {{ user.username }}!</h3>
+        <p>Your role: <strong>{{ user.role }}</strong></p>
+        <p>This is your dashboard. Navigation to other screens will appear here.</p>
+    </div>
+</div>
+{% endblock %} 

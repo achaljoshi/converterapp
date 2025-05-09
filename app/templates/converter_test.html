@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Test Converter Config</h2>
+<form method="post" enctype="multipart/form-data">
+    <div class="mb-3">
+        <label for="converter_id" class="form-label">Select Converter Config:</label>
+        <select name="converter_id" id="converter_id" class="form-select" required>
+            {% for c in converter_configs %}
+                <option value="{{ c.id }}">{{ c.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="source_file" class="form-label">Upload Source File:</label>
+        <input type="file" name="source_file" id="source_file" class="form-control" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Convert</button>
+</form>
+{% if error %}
+    <div class="alert alert-danger mt-3">{{ error }}</div>
+{% endif %}
+{% if result %}
+    <h3 class="mt-4">Converted Output</h3>
+    <pre>{{ result }}</pre>
+    {% if download_url %}
+        <a href="{{ download_url }}" class="btn btn-success mt-2" download>Download Output</a>
+    {% endif %}
+{% endif %}
+{% endblock %} 
