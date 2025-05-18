@@ -1,8 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}{{ action }} Converter Config{% endblock %}
 {% block content %}
-<link href="https://cdn.jsdelivr.net/npm/jsoneditor@9.10.0/dist/jsoneditor.min.css" rel="stylesheet" type="text/css">
-<script src="https://cdn.jsdelivr.net/npm/jsoneditor@9.10.0/dist/jsoneditor.min.js"></script>
 <div class="card">
     <div class="card-body">
         <h3>{{ action }} Converter Config</h3>
@@ -15,248 +13,108 @@
                 </div>
             {% endif %}
         {% endwith %}
-        {% if form.errors %}
-            <div class="alert alert-danger">
-                <ul class="mb-0">
-                {% for field, errors in form.errors.items() %}
-                    {% for error in errors %}
-                        <li><strong>{{ field|capitalize }}:</strong> {{ error }}</li>
-                    {% endfor %}
-                {% endfor %}
-                </ul>
-            </div>
-        {% endif %}
-        <form method="POST" id="converterConfigForm">
-            {{ form.hidden_tag() }}
+        <form method="POST" id="converterConfigForm" enctype="multipart/form-data">
             <div class="mb-3">
-                {{ form.name.label(class="form-label") }}
-                {{ form.name(class="form-control") }}
-                {% if form.name.errors %}
-                    <div class="text-danger small">{{ form.name.errors[0] }}</div>
-                {% endif %}
+                <label class="form-label">Name</label>
+                <input type="text" class="form-control" name="name" value="{{ config.name if config else '' }}" required />
             </div>
             <div class="mb-3">
-                {{ form.description.label(class="form-label") }}
-                {{ form.description(class="form-control") }}
-                {% if form.description.errors %}
-                    <div class="text-danger small">{{ form.description.errors[0] }}</div>
-                {% endif %}
+                <label class="form-label">Description</label>
+                <input type="text" class="form-control" name="description" value="{{ config.description if config else '' }}" />
             </div>
             <div class="mb-3">
-                {{ form.source_type.label(class="form-label") }}
-                {{ form.source_type(class="form-select", id="sourceTypeSelect") }}
-                {% if form.source_type.errors %}
-                    <div class="text-danger small">{{ form.source_type.errors[0] }}</div>
-                {% endif %}
+                <label>Source Type:</label>
+                <select id="sourceTypeSelect" name="source_type" data-initial="{{ config.source_type if config else '' }}"></select>
+                <label>Target Type:</label>
+                <select id="targetTypeSelect" name="target_type" data-initial="{{ config.target_type if config else '' }}"></select>
             </div>
             <div class="mb-3">
-                {{ form.target_type.label(class="form-label") }}
-                {{ form.target_type(class="form-select", id="targetTypeSelect") }}
-                {% if form.target_type.errors %}
-                    <div class="text-danger small">{{ form.target_type.errors[0] }}</div>
-                {% endif %}
+                <label for="rules">Mapping Rules (JSON):</label>
+                <div id="jsoneditor_rules" style="height: 300px;"></div>
+                <input type="hidden" id="rules" name="rules" value="{{ config.rules if config and config.rules else '{}' }}">
+                <small>
+                  Map target template variables to extracted source variables.<br>
+                  Example:<br>
+                  <pre style="background:#f8f8f8; border:1px solid #eee; padding:8px;">{
+  "tag50KLine3": {"source": "Dbtr_AdrLine1"},
+  "tag20": {"source": "MsgId"}
+}</pre>
+                </small>
             </div>
             <div class="mb-3">
-                <label class="form-label">Field Mappings</label>
-                <table class="table" id="mappingsTable">
-                    <thead>
-                        <tr>
-                            <th>Source Field</th>
-                            <th>Target Field(s)</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody id="mappingsBody">
-                    </tbody>
-                </table>
-                <button type="button" class="btn btn-success btn-sm" id="addMappingBtn">+ Add Mapping</button>
-                <div id="mappingValidation" class="text-danger mt-2" style="display:none;"></div>
+                <label for="extraction_rules">Extraction Mapping (JSON):</label>
+                <div id="jsoneditor_extraction" style="height: 300px;"></div>
+                <input type="hidden" id="extraction_rules" name="extraction_rules" value="{{ filetype.extraction_rules if filetype and filetype.extraction_rules else '{}' }}">
+                <small>
+                  For XML file types, map variable names to XPaths.<br>
+                  Example:<br>
+                  <pre style="background:#f8f8f8; border:1px solid #eee; padding:8px;">{
+  "Dbtr_AdrLine1": "/Root/Document/FIToFICstmrCdtTrf/CdtTrfTxInf/Dbtr/PstlAdr/AdrLine[1]",
+  "MsgId": "/Root/Document/FIToFICstmrCdtTrf/GrpHdr/MsgId"
+}</pre>
+                </small>
             </div>
-            {{ form.rules(class="d-none", id="rulesField") }}
-            {{ form.schema(class="d-none", id="schemaField") }}
+            <input type="hidden" id="schemaField" name="schema" value="{{ config.schema if config else '' }}" />
             <div class="d-grid">
-                {{ form.submit(class="btn btn-success") }}
+                <button type="submit" class="btn btn-success">Save</button>
             </div>
         </form>
     </div>
 </div>
+<link href="https://cdn.jsdelivr.net/npm/jsoneditor@9.10.0/dist/jsoneditor.min.css" rel="stylesheet" type="text/css">
+<script src="https://cdn.jsdelivr.net/npm/jsoneditor@9.10.0/dist/jsoneditor.min.js"></script>
 <script>
-let sourceFields = [];
-let targetFields = [];
-
-function fetchFields(type, callback) {
-    fetch(`/config/get_fields/${encodeURIComponent(type)}`)
-        .then(response => response.json())
-        .then(data => callback(data));
-}
-
-function updateDropdownOptions(select, options, multi=false) {
-    select.innerHTML = '';
-    options.forEach(opt => {
-        const option = document.createElement('option');
-        option.value = opt;
-        option.textContent = opt;
-        select.appendChild(option);
+window.addEventListener('DOMContentLoaded', async function() {
+    // Fetch file types from backend
+    const resp = await fetch('/config/get_filetypes');
+    const fileTypes = resp.ok ? await resp.json() : [];
+    const sourceSelect = document.getElementById('sourceTypeSelect');
+    const targetSelect = document.getElementById('targetTypeSelect');
+    sourceSelect.innerHTML = '';
+    targetSelect.innerHTML = '';
+    fileTypes.forEach(ft => {
+        const opt1 = document.createElement('option');
+        opt1.value = ft;
+        opt1.textContent = ft;
+        sourceSelect.appendChild(opt1);
+        const opt2 = document.createElement('option');
+        opt2.value = ft;
+        opt2.textContent = ft;
+        targetSelect.appendChild(opt2);
     });
-}
+    // Set initial value if editing
+    sourceSelect.value = sourceSelect.getAttribute('data-initial') || '';
+    targetSelect.value = targetSelect.getAttribute('data-initial') || '';
 
-function addMappingRow(srcVal, tgtVals) {
-    const tbody = document.getElementById('mappingsBody');
-    const tr = document.createElement('tr');
-    const srcTd = document.createElement('td');
-    const tgtTd = document.createElement('td');
-    const delTd = document.createElement('td');
-
-    const srcSelect = document.createElement('select');
-    srcSelect.className = 'form-select form-select-sm sourceFieldSelect';
-    sourceFields.forEach(f => {
-        const opt = document.createElement('option');
-        opt.value = f;
-        opt.textContent = f;
-        if (srcVal && srcVal === f) opt.selected = true;
-        srcSelect.appendChild(opt);
-    });
-    srcTd.appendChild(srcSelect);
-
-    const tgtSelect = document.createElement('select');
-    tgtSelect.className = 'form-select form-select-sm targetFieldSelect';
-    tgtSelect.multiple = true;
-    targetFields.forEach(f => {
-        const opt = document.createElement('option');
-        opt.value = f;
-        opt.textContent = f;
-        if (tgtVals && tgtVals.includes(f)) opt.selected = true;
-        tgtSelect.appendChild(opt);
-    });
-    tgtTd.appendChild(tgtSelect);
-
-    const delBtn = document.createElement('button');
-    delBtn.type = 'button';
-    delBtn.className = 'btn btn-danger btn-sm';
-    delBtn.textContent = 'Delete';
-    delBtn.onclick = function() { tr.remove(); };
-    delTd.appendChild(delBtn);
-
-    tr.appendChild(srcTd);
-    tr.appendChild(tgtTd);
-    tr.appendChild(delTd);
-    tbody.appendChild(tr);
-}
-
-function refreshAllMappingDropdowns() {
-    document.querySelectorAll('.sourceFieldSelect').forEach(select => {
-        const val = select.value;
-        updateDropdownOptions(select, sourceFields);
-        if (sourceFields.includes(val)) select.value = val;
-    });
-    document.querySelectorAll('.targetFieldSelect').forEach(select => {
-        const selected = Array.from(select.selectedOptions).map(opt => opt.value);
-        updateDropdownOptions(select, targetFields, true);
-        selected.forEach(val => {
-            if (targetFields.includes(val)) {
-                Array.from(select.options).forEach(opt => {
-                    if (opt.value === val) opt.selected = true;
-                });
-            }
-        });
-    });
-}
-
-document.getElementById('sourceTypeSelect').onchange = function() {
-    fetchFields(this.value, function(fields) {
-        sourceFields = fields;
-        refreshAllMappingDropdowns();
-    });
-};
-document.getElementById('targetTypeSelect').onchange = function() {
-    fetchFields(this.value, function(fields) {
-        targetFields = fields;
-        refreshAllMappingDropdowns();
-    });
-};
-document.getElementById('addMappingBtn').onclick = function() {
-    addMappingRow();
-};
-
-function validateMappings() {
-    const errorDiv = document.getElementById('mappingValidation');
-    errorDiv.style.display = 'none';
-    let valid = true;
-    const seen = new Set();
-    let empty = false;
-    document.querySelectorAll('#mappingsBody tr').forEach(tr => {
-        const src = tr.querySelector('.sourceFieldSelect').value;
-        const tgtSelect = tr.querySelector('.targetFieldSelect');
-        const tgts = Array.from(tgtSelect.selectedOptions).map(opt => opt.value);
-        if (!src || tgts.length === 0) empty = true;
-        tgts.forEach(tgt => {
-            const key = src + '->' + tgt;
-            if (seen.has(key)) valid = false;
-            seen.add(key);
-        });
-    });
-    if (empty) {
-        errorDiv.textContent = 'All mappings must have a source and at least one target field.';
-        errorDiv.style.display = 'block';
-        return false;
-    }
-    if (!valid) {
-        errorDiv.textContent = 'Duplicate source-target mapping detected.';
-        errorDiv.style.display = 'block';
-        return false;
-    }
-    return true;
-}
-
-document.getElementById('converterConfigForm').onsubmit = function() {
-    if (!validateMappings()) return false;
-    // Serialize mappings as rules JSON (one-to-many)
-    const mappings = {};
-    const allTargets = new Set();
-    document.querySelectorAll('#mappingsBody tr').forEach(tr => {
-        const src = tr.querySelector('.sourceFieldSelect').value;
-        const tgtSelect = tr.querySelector('.targetFieldSelect');
-        const tgts = Array.from(tgtSelect.selectedOptions).map(opt => opt.value);
-        if (src && tgts.length > 0) {
-            mappings[src] = tgts;
-            tgts.forEach(t => allTargets.add(t));
+    // Mapping Rules JSONEditor
+    const rulesContainer = document.getElementById('jsoneditor_rules');
+    const rulesEditor = new JSONEditor(rulesContainer, { mode: 'code' });
+    try {
+        rulesEditor.set(JSON.parse(document.getElementById('rules').value || '{}'));
+    } catch { rulesEditor.set({}); }
+    document.getElementById('converterConfigForm').addEventListener('submit', function(e) {
+        try {
+            document.getElementById('rules').value = JSON.stringify(rulesEditor.get());
+        } catch {
+            alert('Invalid JSON in mapping!');
+            e.preventDefault();
         }
     });
-    document.getElementById('rulesField').value = JSON.stringify(mappings);
-    // Auto-generate schema for mapped target fields
-    const schema = {
-        type: 'object',
-        properties: {},
-        required: Array.from(allTargets)
-    };
-    allTargets.forEach(tgt => {
-        schema.properties[tgt] = {type: 'string'}; // Default to string; can be enhanced
-    });
-    document.getElementById('schemaField').value = JSON.stringify(schema);
-    return true;
-};
 
-// If editing, pre-populate mappings
-(function() {
-    const rulesField = document.getElementById('rulesField');
-    const srcType = document.getElementById('sourceTypeSelect').value;
-    const tgtType = document.getElementById('targetTypeSelect').value;
-    if (srcType) {
-        fetchFields(srcType, function(fields) {
-            sourceFields = fields;
-            if (tgtType) {
-                fetchFields(tgtType, function(tfields) {
-                    targetFields = tfields;
-                    if (rulesField.value) {
-                        try {
-                            const mappings = JSON.parse(rulesField.value);
-                            Object.entries(mappings).forEach(([src, tgts]) => addMappingRow(src, Array.isArray(tgts) ? tgts : [tgts]));
-                        } catch (e) {}
-                    }
-                });
-            }
-        });
-    }
-})();
+    // Extraction Mapping JSONEditor
+    const extractionContainer = document.getElementById('jsoneditor_extraction');
+    const extractionEditor = new JSONEditor(extractionContainer, { mode: 'code' });
+    try {
+        extractionEditor.set(JSON.parse(document.getElementById('extraction_rules').value || '{}'));
+    } catch { extractionEditor.set({}); }
+    document.getElementById('converterConfigForm').addEventListener('submit', function(e) {
+        try {
+            document.getElementById('extraction_rules').value = JSON.stringify(extractionEditor.get());
+        } catch {
+            alert('Invalid JSON in extraction mapping!');
+            e.preventDefault();
+        }
+    });
+});
 </script>
 {% endblock %} 

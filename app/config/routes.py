@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from . import config
 from ..models import Configuration, FileType, AuditLog
 from .. import db
-from .forms import ConfigurationForm, ConverterConfigForm
+# from .forms import ConverterConfigForm  # forms.py has been deleted
 import json
 from jsonschema import validate as jsonschema_validate, ValidationError as JsonSchemaValidationError
 from werkzeug.utils import secure_filename
@@ -17,6 +17,7 @@ from markupsafe import Markup
 import csv
 from flask import Response
 import io
+from lxml import etree
 
 def admin_required(f):
     from functools import wraps
@@ -187,7 +188,7 @@ def test_extraction(config_id):
             else:
                 error = 'Unsupported file type for extraction.'
             # Debug log for extracted output
-            logging.debug('Extracted output: %s', extracted)
+            print('Extracted:', extracted)
             # Custom check for required fields (must not be None, empty string, empty list, or empty dict)
             if extracted and config_obj.schema:
                 try:
@@ -849,81 +850,65 @@ def list_converters():
 @login_required
 @admin_required
 def add_converter():
-    form = ConverterConfigForm()
-    # Dynamically populate choices from Configuration table
-    file_types = sorted({c.file_type for c in Configuration.query.all() if c.file_type})
-    choices = [(ft, ft) for ft in file_types]
-    form.source_type.choices = choices
-    form.target_type.choices = choices
-    if form.validate_on_submit():
+    if request.method == 'POST':
         # Validate JSON
         try:
             import json
-            json.loads(form.rules.data)
+            json.loads(request.form.get('rules', '{}'))
         except Exception:
             flash('Rules must be valid JSON.')
-            return render_template('converter_config_form.html', form=form, action='Add')
-        if form.schema.data:
+            return render_template('converter_config_form.html', action='Add')
+        if request.form.get('schema'):
             try:
-                json.loads(form.schema.data)
+                json.loads(request.form.get('schema'))
             except Exception:
                 flash('Schema must be valid JSON.')
-                return render_template('converter_config_form.html', form=form, action='Add')
+                return render_template('converter_config_form.html', action='Add')
         config = ConverterConfig(
-            name=form.name.data,
-            description=form.description.data,
-            source_type=form.source_type.data,
-            target_type=form.target_type.data,
-            rules=form.rules.data,
-            schema=form.schema.data
+            name=request.form.get('name'),
+            description=request.form.get('description'),
+            source_type=request.form.get('source_type'),
+            target_type=request.form.get('target_type'),
+            rules=request.form.get('rules'),
+            schema=request.form.get('schema')
         )
         _db.session.add(config)
         _db.session.commit()
         flash('Converter configuration added successfully!')
         return redirect(url_for('converters.list_converters'))
-    return render_template('converter_config_form.html', form=form, action='Add')
+    return render_template('converter_config_form.html', action='Add')
 
 @converters.route('/config/converters/edit/<int:config_id>', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def edit_converter(config_id):
     config = ConverterConfig.query.get_or_404(config_id)
-    form = ConverterConfigForm(obj=config)
-    file_types = sorted({c.file_type for c in Configuration.query.all() if c.file_type})
-    choices = [(ft, ft) for ft in file_types]
-    form.source_type.choices = choices
-    form.target_type.choices = choices
-    if form.validate_on_submit():
+    if request.method == 'POST':
         try:
             import json
-            json.loads(form.rules.data)
+            json.loads(request.form.get('rules', '{}'))
         except Exception:
             flash('Rules must be valid JSON.')
-            return render_template('converter_config_form.html', form=form, action='Edit')
-        if form.schema.data:
+            return render_template('converter_config_form.html', action='Edit', config=config)
+        if request.form.get('schema'):
             try:
-                json.loads(form.schema.data)
+                json.loads(request.form.get('schema'))
             except Exception:
                 flash('Schema must be valid JSON.')
-                return render_template('converter_config_form.html', form=form, action='Edit')
-        config.name = form.name.data
-        config.description = form.description.data
-        config.source_type = form.source_type.data
-        config.target_type = form.target_type.data
-        config.rules = form.rules.data
-        config.schema = form.schema.data
+                return render_template('converter_config_form.html', action='Edit', config=config)
+        config.name = request.form.get('name')
+        config.description = request.form.get('description')
+        config.source_type = request.form.get('source_type')
+        config.target_type = request.form.get('target_type')
+        config.rules = request.form.get('rules')
+        config.schema = request.form.get('schema')
+        print("Saving rules:", config.rules)
         _db.session.commit()
+        print("Saved config:", config.rules)
         flash('Converter configuration updated successfully!')
         return redirect(url_for('converters.list_converters'))
     # Pre-populate form fields for GET
-    if request.method == 'GET':
-        form.name.data = config.name
-        form.description.data = config.description
-        form.source_type.data = config.source_type
-        form.target_type.data = config.target_type
-        form.rules.data = config.rules
-        form.schema.data = config.schema
-    return render_template('converter_config_form.html', form=form, action='Edit')
+    return render_template('converter_config_form.html', action='Edit', config=config)
 
 @converters.route('/config/converters/delete/<int:config_id>', methods=['POST'])
 @login_required
@@ -963,54 +948,75 @@ def converter_test():
             if not file or file.filename == '':
                 error = "Please upload a file."
             else:
-                src_conf = Configuration.query.filter_by(file_type=converter.source_type).first()
-                tgt_conf = Configuration.query.filter_by(file_type=converter.target_type).first()
-                if not src_conf or not tgt_conf:
-                    error = "Source or target configuration not found."
+                content = file.read().decode('utf-8')
+                import re, json, os
+                template_dir = os.path.join(current_app.root_path, 'templates', 'filetypes')
+                template_content = None
+                file_ext = None
+                for ext in ['xml', 'txt']:
+                    template_path = os.path.join(template_dir, f'{converter.target_type}.{ext}.j2')
+                    if os.path.exists(template_path):
+                        with open(template_path, encoding='utf-8') as f:
+                            template_content = f.read()
+                        file_ext = ext
+                        break
+                if not template_content:
+                    error = "No template found for target type."
+                    result = None
+                    download_url = None
                 else:
-                    content = file.read().decode('utf-8')
-                    # Extract source fields
-                    if converter.source_type.lower().startswith('mt'):
-                        extracted = extract_mt_fields(content, src_conf.rules)
-                    else:
-                        extracted = extract_xml_fields(content, src_conf.rules)
-                    # Map fields using converter config
-                    mapped_data = {}
                     try:
                         mapping_rules = json.loads(converter.rules)
-                        for src_field, tgt_fields in mapping_rules.items():
-                            value = extracted.get(src_field)
-                            if value is not None:
-                                for tgt_field in (tgt_fields if isinstance(tgt_fields, list) else [tgt_fields]):
-                                    mapped_data[tgt_field] = value
                     except Exception as e:
                         error = f"Error in mapping: {e}"
-                    # Load target template
-                    template_dir = os.path.join(current_app.root_path, 'templates', 'filetypes')
-                    template_content = None
-                    file_ext = None
-                    for ext in ['xml', 'txt']:
-                        template_path = os.path.join(template_dir, f'{converter.target_type}.{ext}.j2')
-                        if os.path.exists(template_path):
-                            with open(template_path, encoding='utf-8') as f:
-                                template_content = f.read()
-                            file_ext = ext
-                            break
-                    if template_content:
-                        from flask import render_template_string
-                        rendered_output = render_template_string(template_content, **mapped_data)
-                        result = rendered_output
-                        # Save to temp file for download
-                        temp_dir = tempfile.gettempdir()
-                        temp_filename = f'converted_output.{file_ext}'
-                        temp_path = os.path.join(temp_dir, temp_filename)
-                        with open(temp_path, 'w', encoding='utf-8') as f:
-                            f.write(rendered_output)
-                        download_url = url_for('converters.download_converted', filename=temp_filename)
+                        mapping_rules = {}
+                    # --- Use JSON-based XPath extraction for XML, text extraction for text ---
+                    print('converter.source_type:', converter.source_type)
+                    if converter.source_type.lower().endswith('xml'):
+                        extracted = extract_xml_with_xpaths(content, converter.rules)
                     else:
-                        error = "No template found for target type."
-                        result = None
-                        download_url = None
+                        extracted = extract_generic_text_fields(content, template_content)
+                    print('Extracted variables:', extracted)
+                    mapped_data = {}
+                    for tgt_var in re.findall(r'@@(.*?)@@', template_content):
+                        map_cfg = mapping_rules.get(tgt_var, {}) if isinstance(mapping_rules.get(tgt_var), dict) else {}
+                        src_var = map_cfg.get('source') if map_cfg else tgt_var
+                        default_val = map_cfg.get('default', '') if map_cfg else ''
+                        transform = map_cfg.get('transform', 'none') if map_cfg else 'none'
+                        date_format = map_cfg.get('date_format', '') if map_cfg else ''
+                        value = extracted.get(src_var, default_val) if src_var else default_val
+                        # Apply transformation
+                        if value is not None and value != '':
+                            if transform == 'uppercase':
+                                value = str(value).upper()
+                            elif transform == 'lowercase':
+                                value = str(value).lower()
+                            elif transform == 'date_format' and date_format:
+                                import datetime
+                                try:
+                                    dt = None
+                                    for fmt in ('%Y-%m-%d', '%Y%m%d', '%d-%m-%Y', '%Y/%m/%d'):
+                                        try:
+                                            dt = datetime.datetime.strptime(str(value), fmt)
+                                            break
+                                        except Exception:
+                                            continue
+                                    if dt:
+                                        value = dt.strftime(date_format)
+                                except Exception:
+                                    pass
+                        mapped_data[tgt_var] = value if value is not None else ''
+                    def replace_vars(match):
+                        var = match.group(1)
+                        return str(mapped_data.get(var, ''))
+                    rendered_output = re.sub(r'@@(.*?)@@', replace_vars, template_content)
+                    result = rendered_output
+                    temp_dir = tempfile.gettempdir()
+                    temp_filename = f'converted_output.{file_ext}'
+                    temp_path = os.path.join(temp_dir, temp_filename)
+                    with open(temp_path, 'w', encoding='utf-8') as f:
+                        f.write(rendered_output)
+                    download_url = url_for('converters.download_converted', filename=temp_filename)
     return render_template('converter_test.html', converter_configs=converter_configs, converter_configs_dict=converter_configs_dict, result=result, error=error, download_url=download_url)
 
 @converters.route('/config/download_converted/<filename>')
@@ -1046,7 +1052,14 @@ def get_fields(file_type):
 @admin_required
 def download_template(filename):
     template_dir = os.path.join(current_app.root_path, 'templates', 'filetypes')
-    return send_from_directory(template_dir, filename)
+    # Always serve .j2 templates as plain text for safe viewing
+    if filename.endswith('.j2'):
+        mimetype = 'text/plain'
+    elif filename.endswith('.xml'):
+        mimetype = 'application/xml'
+    else:
+        mimetype = 'text/plain'
+    return send_from_directory(template_dir, filename, as_attachment=False, mimetype=mimetype)
 
 @converters.route('/config/upload_template', methods=['POST'])
 @login_required
@@ -1071,4 +1084,251 @@ def upload_template():
     save_path = os.path.join(template_dir, save_name)
     file.save(save_path)
     flash(f'Template for {file_type} uploaded successfully!', 'success')
-    return redirect(url_for('filetypes.list_filetypes')) 
+    return redirect(url_for('filetypes.list_filetypes'))
+
+@config.route('/config/get_fields/all_types')
+@login_required
+@admin_required
+def get_all_types():
+    types = [c.file_type for c in Configuration.query.all() if c.file_type]
+    return jsonify(sorted(set(types)))
+
+def extract_template_variables(template_content):
+    import re
+    # Matches @@variable@@ (non-greedy)
+    return re.findall(r'@@(.*?)@@', template_content)
+
+@config.route('/config/get_template_vars/<file_type>')
+@login_required
+@admin_required
+def get_template_vars(file_type):
+    import os
+    template_dir = os.path.join(current_app.root_path, 'templates', 'filetypes')
+    variables = set()
+    for ext in ['xml', 'txt']:
+        template_path = os.path.join(template_dir, f'{file_type}.{ext}.j2')
+        if os.path.exists(template_path):
+            with open(template_path, encoding='utf-8') as f:
+                content = f.read()
+                variables.update(extract_template_variables(content))
+    return jsonify(sorted(variables))
+
+@config.route('/config/get_template_var_descriptions/<file_type>')
+@login_required
+@admin_required
+def get_template_var_descriptions(file_type):
+    import os
+    import re
+    template_dir = os.path.join(current_app.root_path, 'templates', 'filetypes')
+    descriptions = {}
+    # Try to find a sidecar JSON file with descriptions
+    desc_path = os.path.join(template_dir, f'{file_type}.descriptions.json')
+    if os.path.exists(desc_path):
+        try:
+            import json
+            with open(desc_path, encoding='utf-8') as f:
+                descriptions = json.load(f)
+        except Exception:
+            descriptions = {}
+    else:
+        # Fallback: parse inline comments in template files
+        for ext in ['xml', 'txt']:
+            template_path = os.path.join(template_dir, f'{file_type}.{ext}.j2')
+            if os.path.exists(template_path):
+                with open(template_path, encoding='utf-8') as f:
+                    content = f.read()
+                    # Match <!-- @@var@@: description -->
+                    for m in re.finditer(r'<!--\s*@@(.*?)@@:\s*(.*?)\s*-->', content):
+                        var, desc = m.group(1), m.group(2)
+                        descriptions[var] = desc
+    return jsonify(descriptions)
+
+@config.route('/config/converter_preview', methods=['POST'])
+@login_required
+@admin_required
+def converter_preview():
+    try:
+        source_type = request.form.get('source_type')
+        target_type = request.form.get('target_type')
+        rules = request.form.get('rules')
+        file = request.files.get('source_file')
+        if not (source_type and target_type and rules and file):
+            return jsonify({'error': 'Missing required fields.'})
+        from . import Configuration
+        src_conf = Configuration.query.filter_by(file_type=source_type).first()
+        if not src_conf:
+            return jsonify({'error': 'Source configuration not found.'})
+        content = file.read().decode('utf-8')
+        # Extract source fields
+        if source_type.lower().startswith('mt'):
+            extracted = parse_mt103_fields(content)
+        else:
+            extracted = extract_xml_fields(content, src_conf.rules)
+        # Load target template
+        import os
+        template_dir = os.path.join(current_app.root_path, 'templates', 'filetypes')
+        template_content = None
+        file_ext = None
+        for ext in ['xml', 'txt']:
+            template_path = os.path.join(template_dir, f'{target_type}.{ext}.j2')
+            if os.path.exists(template_path):
+                with open(template_path, encoding='utf-8') as f:
+                    template_content = f.read()
+                file_ext = ext
+                break
+        if not template_content:
+            return jsonify({'error': 'No template found for target type.'})
+        import re, json
+        template_vars = re.findall(r'@@(.*?)@@', template_content)
+        try:
+            mapping_rules = json.loads(rules)
+        except Exception as e:
+            return jsonify({'error': f'Error in mapping: {e}'})
+        mapped_data = {}
+        for tgt_var in template_vars:
+            map_cfg = mapping_rules.get(tgt_var, {})
+            src_var = map_cfg.get('source')
+            default_val = map_cfg.get('default', '')
+            transform = map_cfg.get('transform', 'none')
+            date_format = map_cfg.get('date_format', '')
+            value = extracted.get(src_var, default_val) if src_var else default_val
+            # Apply transformation
+            if value is not None and value != '':
+                if transform == 'uppercase':
+                    value = str(value).upper()
+                elif transform == 'lowercase':
+                    value = str(value).lower()
+                elif transform == 'date_format' and date_format:
+                    import datetime
+                    try:
+                        dt = None
+                        for fmt in ('%Y-%m-%d', '%Y%m%d', '%d-%m-%Y', '%Y/%m/%d'):
+                            try:
+                                dt = datetime.datetime.strptime(str(value), fmt)
+                                break
+                            except Exception:
+                                continue
+                        if dt:
+                            value = dt.strftime(date_format)
+                    except Exception:
+                        pass
+            mapped_data[tgt_var] = value if value is not None else ''
+        def replace_vars(match):
+            var = match.group(1)
+            return str(mapped_data.get(var, ''))
+        rendered_output = re.sub(r'@@(.*?)@@', replace_vars, template_content)
+        return jsonify({'preview': rendered_output})
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+@converters.route('/config/get_filetypes')
+@login_required
+@admin_required
+def get_filetypes():
+    from ..models import FileType
+    filetypes = [ft.name for ft in FileType.query.order_by(FileType.name).all()]
+    return jsonify(filetypes)
+
+# def parse_mt103_fields(content):
+#     import re
+#     tag_pattern = re.compile(r':([0-9A-Z]{2,3}):([\s\S]*?)(?=\n:[0-9A-Z]{2,3}:|\n-}|$)', re.MULTILINE)
+#     fields = {}
+#     for match in tag_pattern.finditer(content):
+#         tag = match.group(1).strip()
+#         value = match.group(2).strip()
+#         # Split value into lines
+#         lines = value.split('\n')
+#         # Store the full value as before
+#         fields[f'tag{tag}'] = value.replace('\n', ' ')
+#         # Store each line as tagXXLineN
+#         for idx, line in enumerate(lines):
+#             fields[f'tag{tag}Line{idx+1}'] = line.strip()
+#     return fields 
+
+def extract_generic_text_fields(file_content, template_content=None):
+    import re
+    tag_dict = {}
+    current_tag = None
+    current_value_lines = []
+    # Normalize line endings
+    lines = file_content.replace('\r\n', '\n').replace('\r', '\n').split('\n')
+    for line in lines:
+        # End of block marker
+        if line.strip() == '-}':
+            break
+        # Tag detection
+        tag_match = re.match(r'^\s*(:[0-9A-Za-z]{2,3}:)', line)
+        if tag_match:
+            # Save previous tag's value
+            if current_tag is not None:
+                tag_dict[current_tag] = list(current_value_lines)
+            # Start new tag
+            current_tag = tag_match.group(1)[1:-1]  # e.g., '50K'
+            value = line[line.find(tag_match.group(1)) + len(tag_match.group(1)):]
+            current_value_lines = [value] if value.strip() or value == '' else []
+        elif current_tag is not None:
+            current_value_lines.append(line)
+    # Save last tag
+    if current_tag is not None:
+        tag_dict[current_tag] = list(current_value_lines)
+    # Flatten for output
+    tags = {}
+    for tag, lines in tag_dict.items():
+        tags[f'tag{tag}'] = ' '.join([l.strip() for l in lines])
+        for idx, line in enumerate(lines):
+            tags[f'tag{tag}Line{idx+1}'] = line.strip()
+    return tags
+
+def extract_xml_with_xpaths(file_content, rules_json):
+    import json
+    from lxml import etree
+    import re
+    rules = json.loads(rules_json)
+    parser = etree.XMLParser(recover=True)
+    content_no_decl = re.sub(r'<\?xml[^>]*\?>', '', file_content).strip()
+    wrapped_content = f'<Root>{content_no_decl}</Root>'
+    root = etree.fromstring(wrapped_content.encode('utf-8'), parser=parser)
+    result = {}
+    for var, xpath in rules.items():
+        try:
+            found = root.xpath(xpath)
+            if found:
+                # If it's an element, get its text; if attribute or value, use as is
+                if isinstance(found[0], etree._Element):
+                    result[var] = (found[0].text or '').strip()
+                else:
+                    result[var] = str(found[0]).strip()
+            else:
+                result[var] = ''
+        except Exception as e:
+            result[var] = ''
+    return result 
+
+@config.route('/config/test_extraction_json', methods=['POST'])
+@login_required
+@admin_required
+def test_extraction_json():
+    try:
+        rules = request.form.get('rules', '{}')
+        file = request.files.get('test_file')
+        if not file or not rules:
+            return jsonify({'error': 'Missing file or rules.'})
+        filename = file.filename.lower()
+        content = file.read().decode('utf-8')
+        # Try to parse rules as JSON
+        import json
+        try:
+            rules_json = json.loads(rules)
+        except Exception as e:
+            return jsonify({'error': f'Rules must be valid JSON: {e}'})
+        # Decide extraction method
+        if filename.endswith('.xml'):
+            extracted = extract_xml_with_xpaths(content, rules)
+        else:
+            # For text, use template variable names as keys
+            # Simulate a template with all keys
+            template_content = ''.join([f'@@{k}@@\n' for k in rules_json.keys()])
+            extracted = extract_generic_text_fields(content, template_content)
+        return jsonify({'extracted': extracted})
+    except Exception as e:
+        return jsonify({'error': str(e)}) 

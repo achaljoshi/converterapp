@@ -3,112 +3,112 @@
         <Fr>
             <FIId>
                 <FinInstnId>
-                    <BICFI>{{ BICFI }}</BICFI>
+                    <BICFI>@@BICFI@@</BICFI>
                 </FinInstnId>
             </FIId>
         </Fr>
         <To>
             <FIId>
                 <FinInstnId>
-                    <BICFI>{{ BICFI }}</BICFI>
+                    <BICFI>@@BICFI@@</BICFI>
                 </FinInstnId>
             </FIId>
         </To>
-        <BizMsgIdr>{{ BizMsgIdr }}</BizMsgIdr>
-        <MsgDefIdr>{{ MsgDefIdr }}</MsgDefIdr>
-        <BizSvc>{{ BizSvc }}</BizSvc>
-        <CreDt>{{ CreDt }}</CreDt>
+        <BizMsgIdr>@@BizMsgIdr@@</BizMsgIdr>
+        <MsgDefIdr>@@MsgDefIdr@@</MsgDefIdr>
+        <BizSvc>@@BizSvc@@</BizSvc>
+        <CreDt>@@CreDt@@</CreDt>
 </AppHdr>
 <Document xmlns="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08">
         <FIToFICstmrCdtTrf>
             <GrpHdr>
-                <MsgId>{{ MsgId }}</MsgId>
-                <CreDtTm>{{ CreDtTm }}</CreDtTm>
-                <NbOfTxs>{{ NbOfTxs }}</NbOfTxs>
+                <MsgId>@@MsgId@@</MsgId>
+                <CreDtTm>@@CreDtTm@@</CreDtTm>
+                <NbOfTxs>@@NbOfTxs@@</NbOfTxs>
                 <SttlmInf>
-                    <SttlmMtd>{{ SttlmMtd }}</SttlmMtd>
+                    <SttlmMtd>@@SttlmMtd@@</SttlmMtd>
                 </SttlmInf>
             </GrpHdr>
             <CdtTrfTxInf>
                 <PmtId>
-                    <InstrId>{{ InstrId }}</InstrId>
-                    <EndToEndId>{{ EndToEndId }}</EndToEndId>
-                    <UETR>{{ UETR }}</UETR>
+                    <InstrId>@@InstrId@@</InstrId>
+                    <EndToEndId>@@EndToEndId@@</EndToEndId>
+                    <UETR>@@UETR@@</UETR>
                 </PmtId>
                 <PmtTpInf>
                     <SvcLvl>
-                        <Cd>{{ SvcLvl }}</Cd>
+                        <Cd>@@SvcLvl@@</Cd>
                     </SvcLvl>
                 </PmtTpInf>
-                <IntrBkSttlmAmt Ccy="{{ IntrBkSttlmAmt_Ccy }}">{{ IntrBkSttlmAmt }}</IntrBkSttlmAmt>
-                <IntrBkSttlmDt>{{ IntrBkSttlmDt }}</IntrBkSttlmDt>
-                <InstdAmt Ccy="{{ InstdAmt_Ccy }}">{{ InstdAmt }}</InstdAmt>
-                <ChrgBr>{{ ChrgBr }}</ChrgBr>
+                <IntrBkSttlmAmt Ccy="@@IntrBkSttlmAmt_Ccy@@">@@IntrBkSttlmAmt@@</IntrBkSttlmAmt>
+                <IntrBkSttlmDt>@@IntrBkSttlmDt@@</IntrBkSttlmDt>
+                <InstdAmt Ccy="@@InstdAmt_Ccy@@">@@InstdAmt@@</InstdAmt>
+                <ChrgBr>@@ChrgBr@@</ChrgBr>
                 <PrvsInstgAgt1>
                     <FinInstnId>
-                        <BICFI>{{ PrvsInstgAgt1_BICFI }}</BICFI>
+                        <BICFI>@@PrvsInstgAgt1_BICFI@@</BICFI>
                     </FinInstnId>
                 </PrvsInstgAgt1>
                 <InstgAgt>
                     <FinInstnId>
-                        <BICFI>{{ InstgAgt_BICFI }}</BICFI>
+                        <BICFI>@@InstgAgt_BICFI@@</BICFI>
                     </FinInstnId>
                 </InstgAgt>
                 <InstdAgt>
                     <FinInstnId>
-                        <BICFI>{{ InstdAgt_BICFI }}</BICFI>
+                        <BICFI>@@InstdAgt_BICFI@@</BICFI>
                     </FinInstnId>
                 </InstdAgt>
                 <IntrmyAgt1>
                     <FinInstnId>
-                        <BICFI>{{ IntrmyAgt1_BICFI }}</BICFI>
+                        <BICFI>@@IntrmyAgt1_BICFI@@</BICFI>
                     </FinInstnId>
                 </IntrmyAgt1>
                 <Dbtr>
-                    <Nm>{{ Dbtr_Nm }}</Nm>
+                    <Nm>@@Dbtr_Nm@@</Nm>
                     <PstlAdr>
-                        <AdrLine>{{ Dbtr_AdrLine1 }}</AdrLine>
-                        <AdrLine>{{ Dbtr_AdrLine2 }}</AdrLine>
-                        <AdrLine>{{ Dbtr_AdrLine3 }}</AdrLine>
+                        <AdrLine>@@Dbtr_AdrLine1@@</AdrLine>
+                        <AdrLine>@@Dbtr_AdrLine2@@</AdrLine>
+                        <AdrLine>@@Dbtr_AdrLine3@@</AdrLine>
                     </PstlAdr>
                 </Dbtr>
                 <DbtrAcct>
                     <Id>
                         <Othr>
-                            <Id>{{ Dbtr_Acct_Id }}</Id>
+                            <Id>@@Dbtr_Acct_Id@@</Id>
                         </Othr>
                     </Id>
                 </DbtrAcct>
                 <DbtrAgt>
                     <FinInstnId>
-                        <BICFI>{{ DbtrAgt_BICFI }}</BICFI>
+                        <BICFI>@@DbtrAgt_BICFI@@</BICFI>
                     </FinInstnId>
                 </DbtrAgt>
                 <CdtrAgt>
                     <FinInstnId>
-                        <BICFI>{{ CdtrAgt_BICFI }}</BICFI>
+                        <BICFI>@@CdtrAgt_BICFI@@</BICFI>
                     </FinInstnId>
                 </CdtrAgt>
                 <Cdtr>
-                    <Nm>{{ Cdtr_Nm }}</Nm>
+                    <Nm>@@Cdtr_Nm@@</Nm>
                     <PstlAdr>
-                        <AdrLine>{{ Cdtr_AdrLine1 }}</AdrLine>
-                        <AdrLine>{{ Cdtr_AdrLine2 }}</AdrLine>
-                        <AdrLine>{{ Cdtr_AdrLine3 }}</AdrLine>
+                        <AdrLine>@@Cdtr_AdrLine1@@</AdrLine>
+                        <AdrLine>@@Cdtr_AdrLine2@@</AdrLine>
+                        <AdrLine>@@Cdtr_AdrLine3@@</AdrLine>
                     </PstlAdr>
                 </Cdtr>
                 <CdtrAcct>
                     <Id>
                         <Othr>
-                            <Id>{{ Cdtr_Acct_Id }}</Id>
+                            <Id>@@Cdtr_Acct_Id@@</Id>
                         </Othr>
                     </Id>
                 </CdtrAcct>
                 <InstrForNxtAgt>
-                    <InstrInf>{{ InstrForNxtAgt }}</InstrInf>
+                    <InstrInf>@@InstrForNxtAgt@@</InstrInf>
                 </InstrForNxtAgt>
                 <RmtInf>
-                    <Ustrd>{{ RmtInf }}</Ustrd>
+                    <Ustrd>@@RmtInf@@</Ustrd>
                 </RmtInf>
             </CdtTrfTxInf>
         </FIToFICstmrCdtTrf>
