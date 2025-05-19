@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}Execute Workflow{% endblock %}
+{% block content %}
+<style>
+  table.diff {font-family: monospace; border: 1px solid #ccc; border-collapse: collapse;}
+  .diff_header {background: #eee;}
+  .diff_next {background: #f8f8f8;}
+  .diff_add {background: #e6ffe6;}
+  .diff_chg {background: #ffffcc;}
+  .diff_sub {background: #ffe6e6;}
+</style>
+<div class="row">
+  <div class="col-md-8 offset-md-2">
+    <h3>Execute Workflow: {{ workflow.name }}</h3>
+    {% if need_input %}
+      <div class="alert alert-info">Upload the initial input file to start the workflow.</div>
+      <form method="POST" enctype="multipart/form-data">
+        <div class="mb-3">
+          <label class="form-label">Initial Input File:</label>
+          <input type="file" name="initial_input" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Start Workflow</button>
+      </form>
+    {% elif done %}
+      <div class="alert alert-{{ 'danger' if failed else 'success' }}">
+        {% if failed %}
+          <b>Workflow failed at stage {{ stage_idx + 1 }}.</b>
+        {% else %}
+          <b>Workflow completed successfully!</b>
+        {% endif %}
+      </div>
+      <form method="POST">
+        <button type="submit" name="reset_workflow" value="1" class="btn btn-secondary">Restart Workflow</button>
+        <a href="{{ url_for('converters.test_workflow') }}" class="btn btn-outline-secondary ms-2">Back to Workflows</a>
+      </form>
+    {% else %}
+      <div class="card mb-3">
+        <div class="card-body">
+          <h5>Stage {{ stage_idx + 1 }} of {{ stages|length }}</h5>
+          {% set cfg = converter_configs[stages[stage_idx]|string] %}
+          <b>Converter:</b> {{ cfg.name }}<br>
+          <b>Source Type:</b> {{ cfg.source_type }}<br>
+          <b>Target Type:</b> {{ cfg.target_type }}<br>
+        </div>
+      </div>
+      <form method="POST" enctype="multipart/form-data">
+        {% if not actual_content %}
+        <div class="mb-3">
+          <label class="form-label">Upload Actual File for this Stage:</label>
+          <input type="file" name="actual_file" class="form-control" required>
+        </div>
+        {% endif %}
+        {% if error %}
+          <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+        {% if expected_output and actual_content %}
+          <div class="mb-3">
+            <label class="form-label">Expected Output:</label>
+            <pre style="background:#f8f8f8; border:1px solid #eee; padding:8px;">{{ expected_output }}</pre>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Actual Uploaded File:</label>
+            <pre style="background:#f8f8f8; border:1px solid #eee; padding:8px;">{{ actual_content }}</pre>
+          </div>
+          {% if html_diff %}
+            <div class="mb-3">
+              <label class="form-label">Side-by-Side Diff:</label>
+              <div style="overflow-x:auto;">{{ html_diff|safe }}</div>
+            </div>
+          {% endif %}
+          <button type="submit" name="action" value="pass" class="btn btn-success">Pass & Next Stage</button>
+          <button type="submit" name="action" value="fail" class="btn btn-danger ms-2">Fail</button>
+        {% elif not actual_content %}
+          <button type="submit" class="btn btn-primary">Upload & Compare</button>
+        {% endif %}
+      </form>
+      <form method="POST" class="mt-3">
+        <button type="submit" name="reset_workflow" value="1" class="btn btn-outline-secondary">Restart Workflow</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/diff@5.1.0/dist/diff.min.js"></script>
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/diff2html/bundles/js/diff2html.min.js"></script>
+<script>
+window.addEventListener('DOMContentLoaded', function() {
+  const expected = {% if expected_output %}{{ expected_output|tojson }}{% else %}''{% endif %};
+  const actual = {% if actual_content %}{{ actual_content|tojson }}{% else %}''{% endif %};
+  if (expected && actual && document.getElementById('diff')) {
+    // Use jsdiff to create a unified diff string
+    const diffStr = JsDiff.createTwoFilesPatch('Expected', 'Actual', expected, actual, '', '', {context: 3});
+    // Render with diff2html
+    const diffHtml = Diff2Html.html(diffStr, { drawFileList: false, matching: 'lines', outputFormat: 'side-by-side' });
+    document.getElementById('diff').innerHTML = diffHtml;
+  }
+});
+</script>
+{% endblock %} 

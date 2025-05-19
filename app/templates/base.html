@@ -25,13 +25,13 @@
                     </ul>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Data Generator</a>
+                    <a class="nav-link" href="{{ url_for('converters.data_generator') }}">Data Generator</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Converter</a>
+                    <a class="nav-link" href="{{ url_for('converters.converter_test') }}">Converter</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Processing</a>
+                    <a class="nav-link" href="{{ url_for('converters.test_workflow') }}">Test Workflow</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('filetypes.list_filetypes') }}">File Types</a>

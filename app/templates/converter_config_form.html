@@ -41,19 +41,6 @@
 }</pre>
                 </small>
             </div>
-            <div class="mb-3">
-                <label for="extraction_rules">Extraction Mapping (JSON):</label>
-                <div id="jsoneditor_extraction" style="height: 300px;"></div>
-                <input type="hidden" id="extraction_rules" name="extraction_rules" value="{{ filetype.extraction_rules if filetype and filetype.extraction_rules else '{}' }}">
-                <small>
-                  For XML file types, map variable names to XPaths.<br>
-                  Example:<br>
-                  <pre style="background:#f8f8f8; border:1px solid #eee; padding:8px;">{
-  "Dbtr_AdrLine1": "/Root/Document/FIToFICstmrCdtTrf/CdtTrfTxInf/Dbtr/PstlAdr/AdrLine[1]",
-  "MsgId": "/Root/Document/FIToFICstmrCdtTrf/GrpHdr/MsgId"
-}</pre>
-                </small>
-            </div>
             <input type="hidden" id="schemaField" name="schema" value="{{ config.schema if config else '' }}" />
             <div class="d-grid">
                 <button type="submit" class="btn btn-success">Save</button>
@@ -97,21 +84,6 @@ window.addEventListener('DOMContentLoaded', async function() {
             document.getElementById('rules').value = JSON.stringify(rulesEditor.get());
         } catch {
             alert('Invalid JSON in mapping!');
-            e.preventDefault();
-        }
-    });
-
-    // Extraction Mapping JSONEditor
-    const extractionContainer = document.getElementById('jsoneditor_extraction');
-    const extractionEditor = new JSONEditor(extractionContainer, { mode: 'code' });
-    try {
-        extractionEditor.set(JSON.parse(document.getElementById('extraction_rules').value || '{}'));
-    } catch { extractionEditor.set({}); }
-    document.getElementById('converterConfigForm').addEventListener('submit', function(e) {
-        try {
-            document.getElementById('extraction_rules').value = JSON.stringify(extractionEditor.get());
-        } catch {
-            alert('Invalid JSON in extraction mapping!');
             e.preventDefault();
         }
     });

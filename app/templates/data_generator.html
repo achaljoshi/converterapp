@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Data Generator{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <h3>Data Generator</h3>
+    <form method="POST">
+      <div class="mb-3">
+        <label for="file_type" class="form-label">Select File Type:</label>
+        <select class="form-select" id="file_type" name="file_type" onchange="this.form.submit()" required>
+          <option value="">-- Select --</option>
+          {% for ft in filetypes %}
+            <option value="{{ ft }}" {% if selected_type == ft %}selected{% endif %}>{{ ft }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% if template_vars %}
+        <hr>
+        <h5>Fill in Template Variables:</h5>
+        {% for var in template_vars %}
+          <div class="mb-3">
+            <label class="form-label">{{ var }}</label>
+            <input type="text" class="form-control" name="{{ var }}" value="{{ values[var] if values and var in values else '' }}">
+          </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary">Generate File</button>
+      {% endif %}
+    </form>
+    {% if download_url %}
+      <div class="alert alert-success mt-3">
+        File generated! <a href="{{ download_url }}" class="btn btn-success" download>Download File</a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %} 

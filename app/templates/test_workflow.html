@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Test Workflow{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-md-3">
+    <h5>Existing Workflows</h5>
+    <ul class="list-group mb-3">
+      {% for wf in workflows %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <span>{{ wf.name }}</span>
+          <span>
+            <form method="POST" action="{{ url_for('converters.delete_workflow', id=wf.id) }}" style="display:inline;">
+              <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this workflow?');">Delete</button>
+            </form>
+            <a href="{{ url_for('converters.execute_workflow', id=wf.id) }}" class="btn btn-sm btn-primary ms-1">Execute</a>
+            <a href="{{ url_for('converters.audit_workflow', id=wf.id) }}" class="btn btn-sm btn-secondary ms-1">Audit Log</a>
+            <a href="{{ url_for('converters.edit_workflow', id=wf.id) }}" class="btn btn-sm btn-warning ms-1">Edit</a>
+          </span>
+        </li>
+      {% else %}
+        <li class="list-group-item">No workflows found.</li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="col-md-9">
+    <h5>New Workflow</h5>
+    <form method="POST" action="{{ url_for('converters.create_workflow') }}" id="workflowForm">
+      <div class="mb-3">
+        <label class="form-label">Workflow Name</label>
+        <input type="text" class="form-control" name="workflow_name" required>
+      </div>
+      <div id="stages-list">
+        <label class="form-label">Stages</label>
+        <!-- Stages will be added here -->
+      </div>
+      <button type="button" class="btn btn-success mb-2" onclick="addStage()">+ Add Stage</button>
+      <br>
+      <button type="submit" class="btn btn-primary">Save Workflow</button>
+    </form>
+  </div>
+</div>
+<script>
+let stageCount = 0;
+function addStage() {
+  const stagesList = document.getElementById('stages-list');
+  const div = document.createElement('div');
+  div.className = 'mb-2';
+  div.innerHTML = `<select name="stages[]" class="form-select d-inline-block w-auto" required>
+    <option value="">-- Select Converter Config --</option>
+    {% for cfg in converter_configs %}
+      <option value="{{ cfg.id }}">{{ cfg.name }} ({{ cfg.source_type }} → {{ cfg.target_type }})</option>
+    {% endfor %}
+  </select>
+  <button type="button" class="btn btn-danger btn-sm ms-2" onclick="this.parentElement.remove()">Remove</button>`;
+  stagesList.appendChild(div);
+  stageCount++;
+}
+</script>
+{% endblock %} 

@@ -13,7 +13,7 @@
                 </ul>
             </div>
         {% endif %}
-        <form method="POST">
+        <form method="POST" id="fileTypeForm">
             <div class="mb-3">
                 <label for="name" class="form-label">Name</label>
                 <input type="text" class="form-control" id="name" name="name" required value="{{ filetype.name if filetype else '' }}">
@@ -22,6 +22,26 @@
                 <label for="description" class="form-label">Description</label>
                 <input type="text" class="form-control" id="description" name="description" value="{{ filetype.description if filetype else '' }}">
             </div>
+            <div class="mb-3">
+                <label for="file_mode" class="form-label">File Type Mode</label>
+                <select class="form-control" id="file_mode" name="file_mode">
+                    <option value="text" {% if filetype and filetype.file_mode == 'text' %}selected{% endif %}>Text</option>
+                    <option value="xml" {% if filetype and filetype.file_mode == 'xml' %}selected{% endif %}>XML</option>
+                </select>
+            </div>
+            <div class="mb-3" id="extraction-mapping-group"{% if not filetype or filetype.file_mode != 'xml' %} style="display:none;"{% endif %}>
+                <label for="extraction_rules">Extraction Mapping (JSON):</label>
+                <div id="jsoneditor_extraction" style="height: 300px;"></div>
+                <input type="hidden" id="extraction_rules" name="extraction_rules" value="{{ filetype.extraction_rules if filetype and filetype.extraction_rules else '{}' }}">
+                <small>
+                  For XML file types, map variable names to XPaths.<br>
+                  Example:<br>
+                  <pre style="background:#f8f8f8; border:1px solid #eee; padding:8px;">{
+  "Dbtr_AdrLine1": "/Root/Document/FIToFICstmrCdtTrf/CdtTrfTxInf/Dbtr/PstlAdr/AdrLine[1]",
+  "MsgId": "/Root/Document/FIToFICstmrCdtTrf/GrpHdr/MsgId"
+}</pre>
+                </small>
+            </div>
             <div class="d-grid">
                 <button type="submit" class="btn btn-success">{{ 'Update' if filetype else 'Add' }} File Type</button>
             </div>
@@ -29,4 +49,28 @@
     </div>
 </div>
 <a href="{{ url_for('filetypes.list_filetypes') }}" class="btn btn-secondary mt-3">Back to File Types</a>
+<link href="https://cdn.jsdelivr.net/npm/jsoneditor@9.10.0/dist/jsoneditor.min.css" rel="stylesheet" type="text/css">
+<script src="https://cdn.jsdelivr.net/npm/jsoneditor@9.10.0/dist/jsoneditor.min.js"></script>
+<script>
+window.addEventListener('DOMContentLoaded', function() {
+    // Extraction Mapping JSONEditor
+    const extractionContainer = document.getElementById('jsoneditor_extraction');
+    const extractionEditor = new JSONEditor(extractionContainer, { mode: 'code' });
+    try {
+        extractionEditor.set(JSON.parse(document.getElementById('extraction_rules').value || '{}'));
+    } catch { extractionEditor.set({}); }
+    document.getElementById('fileTypeForm').addEventListener('submit', function(e) {
+        try {
+            document.getElementById('extraction_rules').value = JSON.stringify(extractionEditor.get());
+        } catch {
+            alert('Invalid JSON in extraction mapping!');
+            e.preventDefault();
+        }
+    });
+    // Show/hide extraction mapping based on file_mode
+    document.getElementById('file_mode').addEventListener('change', function() {
+        document.getElementById('extraction-mapping-group').style.display = this.value === 'xml' ? '' : 'none';
+    });
+});
+</script>
 {% endblock %} 
