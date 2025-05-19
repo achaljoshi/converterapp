@@ -63,7 +63,12 @@
                         <!-- Template Status -->
                         {% if ft.has_template %}
                             <span class="badge bg-success ms-1">Template Exists</span>
-                            <a href="{{ url_for('filetypes.download_template', filename=ft.template_url.split('/')[-1]) }}" class="btn btn-link btn-sm" target="_blank">View</a>
+                            {% if ft.has_txt_template %}
+                                <a href="{{ url_for('converters.download_template', filename=ft.name ~ '.txt.j2') }}" class="btn btn-link btn-sm" target="_blank">View TXT</a>
+                            {% endif %}
+                            {% if ft.has_xml_template %}
+                                <a href="{{ url_for('converters.download_template', filename=ft.name ~ '.xml.j2') }}" class="btn btn-link btn-sm" target="_blank">View XML</a>
+                            {% endif %}
                         {% else %}
                             <span class="badge bg-secondary ms-1">No Template</span>
                         {% endif %}

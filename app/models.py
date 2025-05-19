@@ -55,4 +55,15 @@ class ConverterConfig(db.Model):
     source_type = db.Column(db.String(64), nullable=False)
     target_type = db.Column(db.String(64), nullable=False)
     rules = db.Column(db.Text, nullable=False)
-    schema = db.Column(db.Text, nullable=True) 
+    schema = db.Column(db.Text, nullable=True)
+
+class WorkflowAuditLog(db.Model):
+    __tablename__ = 'workflow_audit_log'
+    id = db.Column(db.Integer, primary_key=True)
+    workflow_id = db.Column(db.Integer, db.ForeignKey('workflow.id'), nullable=False)
+    user = db.Column(db.String(128), nullable=False)
+    action = db.Column(db.String(64), nullable=False)
+    details = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    workflow = db.relationship('Workflow', backref=db.backref('audit_logs', lazy=True)) 

@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}New Workflow{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-md-8 offset-md-2">
+    <h3>New Workflow</h3>
+    <a href="{{ url_for('converters.test_workflow') }}" class="btn btn-secondary mb-3">&larr; Back to Existing Workflows</a>
+    <form method="POST" action="{{ url_for('converters.new_workflow') }}" id="workflowForm">
+      <div class="mb-3">
+        <label class="form-label">Workflow Name</label>
+        <input type="text" class="form-control" name="workflow_name" required>
+      </div>
+      <div id="stages-list">
+        <label class="form-label">Stages</label>
+        <!-- Stages will be added here -->
+      </div>
+      <button type="button" class="btn btn-success mb-2" onclick="addStage()">+ Add Stage</button>
+      <br>
+      <button type="submit" class="btn btn-primary">Save Workflow</button>
+    </form>
+  </div>
+</div>
+<script>
+let stageCount = 0;
+function addStage() {
+  const stagesList = document.getElementById('stages-list');
+  const div = document.createElement('div');
+  div.className = 'mb-2';
+  div.innerHTML = `<select name="stages[]" class="form-select d-inline-block w-auto" required>
+    <option value="">-- Select Converter Config --</option>
+    {% for cfg in converter_configs %}
+      <option value="{{ cfg.id }}">{{ cfg.name }} ({{ cfg.source_type }} → {{ cfg.target_type }})</option>
+    {% endfor %}
+  </select>
+  <button type="button" class="btn btn-danger btn-sm ms-2" onclick="this.parentElement.remove()">Remove</button>`;
+  stagesList.appendChild(div);
+  stageCount++;
+}
+</script>
+{% endblock %} 

@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Audit Log - {{ workflow.name }}{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-md-8 offset-md-2">
+    <h3>Audit Log for {{ workflow.name }}</h3>
+    <a href="{{ url_for('converters.test_workflow') }}" class="btn btn-secondary mb-3">&larr; Back to Workflows</a>
+    {% if logs %}
+      <ul class="list-group">
+        {% for log in logs %}
+          <li class="list-group-item">
+            <b>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</b> - {{ log.user }}: <b>{{ log.action }}</b><br>
+            <pre style="white-space: pre-wrap;">{{ log.details }}</pre>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="alert alert-info">No audit log entries for this workflow.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %} 

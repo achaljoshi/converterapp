@@ -1,6 +1,11 @@
 {% extends 'base.html' %}
 {% block content %}
 <h2>Test Converter Config</h2>
+<div class="d-flex mb-3">
+    <form method="get" style="margin-right: 10px;">
+        <button type="submit" name="reset" value="1" class="btn btn-secondary">Refresh</button>
+    </form>
+</div>
 <form method="post" enctype="multipart/form-data">
     <div class="mb-3">
         <label for="converter_id" class="form-label">Select Converter Config:</label>

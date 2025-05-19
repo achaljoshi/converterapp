@@ -1,0 +1,70 @@
+{
+  "tag20": {
+    "source": "MsgId"
+  },
+  "tag23B": {
+    "default": "CRED"
+  },
+  "tag32A": {
+    "sources": [
+      "IntrBkSttlmDt",
+      "InstdAmt_Ccy",
+      "InstdAmt"
+    ],
+    "transform": "mt103_32A"
+  },
+  "tag33B": {
+    "sources": [
+      "InstdAmt_Ccy",
+      "InstdAmt"
+    ],
+    "transform": "mt103_33B"
+  },
+  "tag50KLine1": {
+    "source": "Dbtr_Acct_Id",
+    "prefix": "/"
+  },
+  "tag50KLine2": {
+    "source": "Dbtr_Nm"
+  },
+  "tag50KLine3": {
+    "source": "Dbtr_AdrLine1"
+  },
+  "tag50KLine4": {
+    "source": "Dbtr_AdrLine2"
+  },
+  "tag50KLine5": {
+    "source": "Dbtr_AdrLine3"
+  },
+  "tag52A": {
+    "source": "DbtrAgt_BICFI"
+  },
+  "tag56A": {
+    "source": "PrvsInstgAgt1_BICFI"
+  },
+  "tag57A": {
+    "source": "CdtrAgt_BICFI"
+  },
+  "tag59Line1": {
+    "source": "Cdtr_Acct_Id",
+    "prefix": "/"
+  },
+  "tag59Line2": {
+    "source": "Cdtr_Nm"
+  },
+  "tag59Line3": {
+    "source": "Cdtr_AdrLine1"
+  },
+  "tag59Line4": {
+    "source": "Cdtr_AdrLine2"
+  },
+  "tag70Line1": {
+    "source": "RmtInf"
+  },
+  "tag71ALine1": {
+    "default": "OUR"
+  },
+  "tag72Line1": {
+    "source": "InstrForNxtAgt"
+  }
+}

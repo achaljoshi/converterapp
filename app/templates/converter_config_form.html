@@ -69,9 +69,23 @@ window.addEventListener('DOMContentLoaded', async function() {
         opt2.textContent = ft;
         targetSelect.appendChild(opt2);
     });
-    // Set initial value if editing
-    sourceSelect.value = sourceSelect.getAttribute('data-initial') || '';
-    targetSelect.value = targetSelect.getAttribute('data-initial') || '';
+    // Debugging: log options and initial values
+    console.log('Source options:', Array.from(sourceSelect.options).map(o => o.value));
+    console.log('Target options:', Array.from(targetSelect.options).map(o => o.value));
+    console.log('Initial source:', sourceSelect.getAttribute('data-initial'));
+    console.log('Initial target:', targetSelect.getAttribute('data-initial'));
+    // Robustly set initial value if editing
+    function setSelectValue(select, value) {
+        value = (value || '').trim();
+        for (let opt of select.options) {
+            if (opt.value.trim() === value) {
+                select.value = opt.value;
+                return;
+            }
+        }
+    }
+    setSelectValue(sourceSelect, sourceSelect.getAttribute('data-initial'));
+    setSelectValue(targetSelect, targetSelect.getAttribute('data-initial'));
 
     // Mapping Rules JSONEditor
     const rulesContainer = document.getElementById('jsoneditor_rules');

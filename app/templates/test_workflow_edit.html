@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Edit Workflow{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-md-8 offset-md-2">
+    <h3>Edit Workflow</h3>
+    <a href="{{ url_for('converters.test_workflow') }}" class="btn btn-secondary mb-3">&larr; Back to Existing Workflows</a>
+    <form method="POST" action="{{ url_for('converters.edit_workflow', id=workflow.id) }}" id="workflowForm">
+      <div class="mb-3">
+        <label class="form-label">Workflow Name</label>
+        <input type="text" class="form-control" name="workflow_name" value="{{ workflow.name }}" required>
+      </div>
+      <div id="stages-list">
+        <label class="form-label">Stages</label>
+        <!-- Stages will be added here -->
+      </div>
+      <button type="button" class="btn btn-success mb-2" onclick="addStage()">+ Add Stage</button>
+      <br>
+      <button type="submit" class="btn btn-primary">Save Changes</button>
+    </form>
+    <div id="converter-options-html" style="display:none;">
+      <option value="">-- Select Converter Config --</option>
+      {% for cfg in converter_configs %}
+        <option value="{{ cfg.id }}">{{ cfg.name }} ({{ cfg.source_type }} → {{ cfg.target_type }})</option>
+      {% endfor %}
+    </div>
+    <div id="stages-data" data-stages='{{ stages|tojson|safe }}'></div>
+  </div>
+</div>
+<script>
+let stageCount = 0;
+function addStage(selectedId) {
+  const stagesList = document.getElementById('stages-list');
+  const div = document.createElement('div');
+  div.className = 'mb-2';
+  const converterOptions = document.getElementById('converter-options-html').innerHTML;
+  div.innerHTML = `<select name="stages[]" class="form-select d-inline-block w-auto" required>${converterOptions}</select>
+    <button type="button" class="btn btn-danger btn-sm ms-2" onclick="this.parentElement.remove()">Remove</button>`;
+  stagesList.appendChild(div);
+  if (selectedId) {
+    div.querySelector('select').value = selectedId;
+  }
+  stageCount++;
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+  var stages = JSON.parse(document.getElementById('stages-data').getAttribute('data-stages'));
+  if (Array.isArray(stages)) {
+    for (var i = 0; i < stages.length; i++) {
+      addStage(stages[i]);
+    }
+  }
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,113 @@
+{
+  "BICFI": {
+    "default": "MIDLGB22XXX"
+  },
+  "BizMsgIdr": {
+    "source": "tag20"
+  },
+  "MsgDefIdr": {
+    "source": "tag23B"
+  },
+  "BizSvc": {
+    "source": "tag23B"
+  },
+  "CreDt": {
+    "source": "tag32A"
+  },
+  "MsgId": {
+    "source": "tag20"
+  },
+  "CreDtTm": {
+    "source": "tag32A"
+  },
+  "NbOfTxs": {
+    "default": "1"
+  },
+  "SttlmMtd": {
+    "source": "tag23B"
+  },
+  "InstrId": {
+    "source": "tag20"
+  },
+  "EndToEndId": {
+    "default": ""
+  },
+  "UETR": {
+    "source": "tag121"
+  },
+  "SvcLvl": {
+    "source": "tag23B"
+  },
+  "IntrBkSttlmAmt": {
+    "source": "tag32A"
+  },
+  "IntrBkSttlmAmt_Ccy": {
+    "default": "USD"
+  },
+  "IntrBkSttlmDt": {
+    "source": "tag32A"
+  },
+  "InstdAmt": {
+    "source": "tag33B"
+  },
+  "InstdAmt_Ccy": {
+    "default": "USD"
+  },
+  "ChrgBr": {
+    "source": "tag71ALine1"
+  },
+  "PrvsInstgAgt1_BICFI": {
+    "source": "tag56A"
+  },
+  "InstgAgt_BICFI": {
+    "source": "tag52A"
+  },
+  "InstdAgt_BICFI": {
+    "source": "tag57A"
+  },
+  "IntrmyAgt1_BICFI": {
+    "source": "tag56A"
+  },
+  "Dbtr_Nm": {
+    "source": "tag50KLine2"
+  },
+  "Dbtr_AdrLine1": {
+    "source": "tag50KLine3"
+  },
+  "Dbtr_AdrLine2": {
+    "source": "tag50KLine4"
+  },
+  "Dbtr_AdrLine3": {
+    "source": "tag50KLine5"
+  },
+  "Dbtr_Acct_Id": {
+    "source": "tag50KLine1"
+  },
+  "DbtrAgt_BICFI": {
+    "source": "tag52A"
+  },
+  "CdtrAgt_BICFI": {
+    "source": "tag57A"
+  },
+  "Cdtr_Nm": {
+    "source": "tag59Line2"
+  },
+  "Cdtr_AdrLine1": {
+    "source": "tag59Line3"
+  },
+  "Cdtr_AdrLine2": {
+    "source": "tag59Line4"
+  },
+  "Cdtr_AdrLine3": {
+    "source": "tag59Line5"
+  },
+  "Cdtr_Acct_Id": {
+    "source": "tag59Line1"
+  },
+  "InstrForNxtAgt": {
+    "source": "tag72Line1"
+  },
+  "RmtInf": {
+    "source": "tag70Line1"
+  }
+}

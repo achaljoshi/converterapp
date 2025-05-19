@@ -80,6 +80,19 @@
     {% endif %}
   </div>
 </div>
+<div id="expected-data" data-expected='{{ expected_output|tojson|safe if expected_output else "" }}'></div>
+<div id="actual-data" data-actual='{{ actual_content|tojson|safe if actual_content else "" }}'></div>
+<script>
+window.addEventListener('DOMContentLoaded', function() {
+  const expected = document.getElementById('expected-data').getAttribute('data-expected');
+  const actual = document.getElementById('actual-data').getAttribute('data-actual');
+  if (expected && actual && document.getElementById('diff')) {
+    const diffStr = JsDiff.createTwoFilesPatch('Expected', 'Actual', expected, actual, '', '', {context: 3});
+    const diffHtml = Diff2Html.html(diffStr, { drawFileList: false, matching: 'lines', outputFormat: 'side-by-side' });
+    document.getElementById('diff').innerHTML = diffHtml;
+  }
+});
+</script>
 {% endblock %}
 
 {% block scripts %}
@@ -87,17 +100,4 @@
 <script src="https://cdn.jsdelivr.net/npm/diff@5.1.0/dist/diff.min.js"></script>
 <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/diff2html/bundles/js/diff2html.min.js"></script>
-<script>
-window.addEventListener('DOMContentLoaded', function() {
-  const expected = {% if expected_output %}{{ expected_output|tojson }}{% else %}''{% endif %};
-  const actual = {% if actual_content %}{{ actual_content|tojson }}{% else %}''{% endif %};
-  if (expected && actual && document.getElementById('diff')) {
-    // Use jsdiff to create a unified diff string
-    const diffStr = JsDiff.createTwoFilesPatch('Expected', 'Actual', expected, actual, '', '', {context: 3});
-    // Render with diff2html
-    const diffHtml = Diff2Html.html(diffStr, { drawFileList: false, matching: 'lines', outputFormat: 'side-by-side' });
-    document.getElementById('diff').innerHTML = diffHtml;
-  }
-});
-</script>
 {% endblock %} 

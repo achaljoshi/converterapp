@@ -1,7 +1,7 @@
 from flask import render_template, redirect, url_for, flash, request, abort, g, jsonify, send_from_directory, current_app, send_file
 from flask_login import login_required, current_user
 from . import config
-from ..models import Configuration, FileType, AuditLog, Workflow, ConverterConfig
+from ..models import Configuration, FileType, AuditLog, Workflow, ConverterConfig, WorkflowAuditLog
 from .. import db
 # from .forms import ConverterConfigForm  # forms.py has been deleted
 import json
@@ -640,16 +640,9 @@ def list_filetypes():
     TEMPLATE_DIR = os.path.join(current_app.root_path, 'templates', 'filetypes')
     for ft in filetypes:
         ft.usage_count = Configuration.query.filter_by(file_type=ft.name).count()
-        # Check for .xml.j2 and .txt.j2 templates (add more extensions as needed)
-        for ext in ['xml', 'txt']:
-            template_path = os.path.join(TEMPLATE_DIR, f'{ft.name}.{ext}.j2')
-            if os.path.exists(template_path):
-                ft.has_template = True
-                ft.template_url = url_for('static', filename=f'filetypes/{ft.name}.{ext}.j2')
-                break
-        else:
-            ft.has_template = False
-            ft.template_url = None
+        ft.has_txt_template = os.path.exists(os.path.join(TEMPLATE_DIR, f'{ft.name}.txt.j2'))
+        ft.has_xml_template = os.path.exists(os.path.join(TEMPLATE_DIR, f'{ft.name}.xml.j2'))
+        ft.has_template = ft.has_txt_template or ft.has_xml_template
     return render_template('filetypes.html', filetypes=filetypes, errors=[], search=search)
 
 @filetypes.route('/filetypes/add', methods=['GET', 'POST'])
@@ -916,31 +909,52 @@ def delete_converter(config_id):
 @admin_required
 def test_workflow():
     workflows = Workflow.query.order_by(Workflow.created_at.desc()).all()
-    converter_configs = ConverterConfig.query.all()
-    return render_template('test_workflow.html', workflows=workflows, converter_configs=converter_configs)
+    return render_template('test_workflow_list.html', workflows=workflows)
 
-@converters.route('/test-workflow/create', methods=['POST'])
+@converters.route('/test-workflow/new', methods=['GET', 'POST'])
 @login_required
 @admin_required
-def create_workflow():
+def new_workflow():
+    from flask import request, redirect, url_for, flash
     import json
-    name = request.form.get('workflow_name', '').strip()
-    stages = request.form.getlist('stages[]')
-    if not name or not stages:
-        flash('Workflow name and at least one stage are required.', 'danger')
+    converter_configs = ConverterConfig.query.all()
+    if request.method == 'POST':
+        name = request.form.get('workflow_name', '').strip()
+        stages = request.form.getlist('stages[]')
+        if not name or not stages:
+            flash('Workflow name and at least one stage are required.', 'danger')
+            return render_template('test_workflow_new.html', converter_configs=converter_configs)
+        workflow = Workflow(name=name, stages=json.dumps(stages))
+        db.session.add(workflow)
+        db.session.commit()
+        # Log creation
+        db.session.add(WorkflowAuditLog(
+            workflow_id=workflow.id,
+            user=current_user.username,
+            action='create',
+            details=f"Created workflow: {workflow.name} with stages: {stages}"
+        ))
+        db.session.commit()
+        flash('Workflow created successfully!', 'success')
         return redirect(url_for('converters.test_workflow'))
-    workflow = Workflow(name=name, stages=json.dumps(stages))
-    db.session.add(workflow)
-    db.session.commit()
-    flash('Workflow created successfully!', 'success')
-    return redirect(url_for('converters.test_workflow'))
+    return render_template('test_workflow_new.html', converter_configs=converter_configs)
 
 @converters.route('/test-workflow/<int:id>/delete', methods=['POST'])
 @login_required
 @admin_required
 def delete_workflow(id):
     workflow = Workflow.query.get_or_404(id)
+    workflow_id = workflow.id
+    workflow_name = workflow.name
     db.session.delete(workflow)
+    db.session.commit()
+    # Log delete
+    db.session.add(WorkflowAuditLog(
+        workflow_id=workflow_id,
+        user=current_user.username,
+        action='delete',
+        details=f"Deleted workflow: {workflow_name}"
+    ))
     db.session.commit()
     flash('Workflow deleted.', 'success')
     return redirect(url_for('converters.test_workflow'))
@@ -949,9 +963,33 @@ def delete_workflow(id):
 @login_required
 @admin_required
 def edit_workflow(id):
-    # Stub for now
-    flash('Edit workflow not implemented yet.', 'info')
-    return redirect(url_for('converters.test_workflow'))
+    import json
+    workflow = Workflow.query.get_or_404(id)
+    converter_configs = ConverterConfig.query.all()
+    if request.method == 'POST':
+        name = request.form.get('workflow_name', '').strip()
+        stages = request.form.getlist('stages[]')
+        if not name or not stages:
+            flash('Workflow name and at least one stage are required.', 'danger')
+            return render_template('test_workflow_edit.html', workflow=workflow, converter_configs=converter_configs, stages=stages)
+        old_name = workflow.name
+        old_stages = workflow.stages
+        workflow.name = name
+        workflow.stages = json.dumps(stages)
+        db.session.commit()
+        # Log edit
+        db.session.add(WorkflowAuditLog(
+            workflow_id=workflow.id,
+            user=current_user.username,
+            action='edit',
+            details=f"Edited workflow: {old_name} -> {workflow.name}, stages: {old_stages} -> {stages}"
+        ))
+        db.session.commit()
+        flash('Workflow updated successfully!', 'success')
+        return redirect(url_for('converters.test_workflow'))
+    # Pre-populate form
+    stages = json.loads(workflow.stages)
+    return render_template('test_workflow_edit.html', workflow=workflow, converter_configs=converter_configs, stages=stages)
 
 @converters.route('/test-workflow/<int:id>/execute', methods=['GET', 'POST'])
 @login_required
@@ -1096,9 +1134,9 @@ def execute_workflow(id):
 @login_required
 @admin_required
 def audit_workflow(id):
-    # Stub for now
-    flash('Audit log not implemented yet.', 'info')
-    return redirect(url_for('converters.test_workflow'))
+    workflow = Workflow.query.get_or_404(id)
+    logs = WorkflowAuditLog.query.filter_by(workflow_id=workflow.id).order_by(WorkflowAuditLog.timestamp.desc()).all()
+    return render_template('test_workflow_audit.html', workflow=workflow, logs=logs)
 
 @converters.route('/data-generator', methods=['GET', 'POST'])
 @login_required
@@ -1167,6 +1205,9 @@ def converter_test():
             "target_type": c.target_type
         }
     converter_configs_dict = [converter_to_dict(c) for c in converter_configs]
+    # --- Clear result if reset param is present ---
+    if request.args.get('reset'):
+        return redirect(url_for('converters.converter_test'))
     result = None
     error = None
     download_url = None
@@ -1333,3 +1374,48 @@ def extract_xml_with_xpaths(file_content, rules_json):
         except Exception as e:
             result[var] = ''
     return result
+
+@converters.route('/config/get_filetypes')
+@login_required
+@admin_required
+def get_filetypes():
+    from ..models import FileType
+    filetypes = [ft.name for ft in FileType.query.order_by(FileType.name).all()]
+    return jsonify(filetypes)
+
+@converters.route('/upload-template', methods=['POST'])
+@login_required
+@admin_required
+def upload_template():
+    import os
+    from flask import request, current_app, redirect, url_for, flash
+    file = request.files.get('template_file')
+    file_type = request.form.get('file_type')
+    if not file or not file_type:
+        flash('Missing file or file type.')
+        return redirect(url_for('filetypes.list_filetypes'))
+    ext = file.filename.split('.')[-1]
+    filename = f"{file_type}.{ext}"
+    template_dir = os.path.join(current_app.root_path, 'templates', 'filetypes')
+    os.makedirs(template_dir, exist_ok=True)
+    file.save(os.path.join(template_dir, filename))
+    flash('Template uploaded successfully!')
+    return redirect(url_for('filetypes.list_filetypes'))
+
+@converters.route('/filetypes/template/<filename>')
+@login_required
+@admin_required
+def download_template(filename):
+    import os
+    from flask import send_file
+    template_dir = os.path.join(current_app.root_path, 'templates', 'filetypes')
+    if not filename.endswith('.j2'):
+        abort(404)
+    file_path = os.path.join(template_dir, filename)
+    if not os.path.exists(file_path):
+        abort(404)
+    # Serve .txt.j2 and .xml.j2 as text/plain
+    if filename.endswith('.txt.j2') or filename.endswith('.xml.j2'):
+        return send_file(file_path, mimetype='text/plain')
+    else:
+        return send_file(file_path)
