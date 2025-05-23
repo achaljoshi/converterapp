@@ -7,3 +7,4 @@ instance/app.db
 *.pyd
 .env
 .env.* 
+cmpenv/
