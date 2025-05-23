@@ -216,15 +216,19 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    U[User/Scheduler] -->|Execute Test Case| FA[Flask App]
-    FA -->|Fetch TestCase/Workflow| DB[(Database)]
-    FA -->|Run Workflow Steps| WF[Workflow Engine]
-    WF -->|Use Converter Configs| CC[Converter Configs]
-    WF -->|Store Output| DB
-    FA -->|Create TestRun| DB
-    FA -->|Log Action| AL[Audit Log]
-    FA -->|Return Result| U
+    User[User or Scheduler] -->|Start Test| App[App Receives Request]
+    App -->|Find Test Case| DB[Database]
+    App -->|Get Workflows & Files| DB
+    App -->|Run Each Workflow| Workflow[Workflow Engine]
+    Workflow -->|Process Sample File| Output[Generate Result]
+    Output -->|Save Result| DB
+    App -->|Show Result| User
 ```
+
+- User or scheduler starts a test.
+- App finds the test case and its workflows/files.
+- Each workflow is run with its sample file.
+- Results are saved and shown to the user.
 
 ---
 
