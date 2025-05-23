@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Test Runs</h2>
+  <form class="row g-3 mb-3" method="get">
+    <div class="col-md-3">
+      <label for="status" class="form-label">Status</label>
+      <select name="status" id="status" class="form-select">
+        <option value="">All</option>
+        <option value="passed" {% if status=='passed' %}selected{% endif %}>Passed</option>
+        <option value="failed" {% if status=='failed' %}selected{% endif %}>Failed</option>
+        <option value="error" {% if status=='error' %}selected{% endif %}>Error/Other</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label for="date" class="form-label">Date</label>
+      <input type="date" name="date" id="date" class="form-control" value="{{ date or '' }}">
+    </div>
+    <div class="col-md-3">
+      <label for="test_case_id" class="form-label">Test Case ID</label>
+      <input type="number" name="test_case_id" id="test_case_id" class="form-control" value="{{ test_case_id or '' }}">
+    </div>
+    <div class="col-md-3 align-self-end">
+      <button type="submit" class="btn btn-primary">Filter</button>
+      <a href="{{ url_for('testcases.list_testruns') }}" class="btn btn-secondary ms-2">Clear</a>
+    </div>
+  </form>
+  <div class="d-flex justify-content-end mb-2">
+    <a href="{{ url_for('testcases.export_testruns', status=status, date=date, test_case_id=test_case_id) }}" class="btn btn-outline-success">Export CSV</a>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-bordered align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Test Case</th>
+          <th>Workflow</th>
+          <th>Status</th>
+          <th>Executed At</th>
+          <th>Duration (s)</th>
+          <th>Output</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for run in runs %}
+        <tr>
+          <td>{{ run.test_case.name if run.test_case else '-' }}</td>
+          <td>{{ run.test_case.workflow.name if run.test_case and run.test_case.workflow else '-' }}</td>
+          <td><span class="badge {% if run.status == 'passed' %}bg-success{% elif run.status == 'failed' %}bg-danger{% else %}bg-secondary{% endif %}">{{ run.status|capitalize }}</span></td>
+          <td>{{ run.executed_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+          <td>{{ run.duration }}</td>
+          <td><pre class="mb-0" style="max-width:200px; max-height:40px; overflow:auto;">{{ run.output|truncate(60) }}</pre></td>
+          <td><a href="{{ url_for('testcases.testrun_detail', id=run.id) }}" class="btn btn-sm btn-info">View</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %} 

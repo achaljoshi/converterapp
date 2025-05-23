@@ -16,6 +16,9 @@
             <a href="{{ url_for('converters.execute_workflow', id=wf.id) }}" class="btn btn-sm btn-primary ms-1">Execute</a>
             <a href="{{ url_for('converters.audit_workflow', id=wf.id) }}" class="btn btn-sm btn-secondary ms-1">Audit Log</a>
             <a href="{{ url_for('converters.edit_workflow', id=wf.id) }}" class="btn btn-sm btn-warning ms-1">Edit</a>
+            <form method="POST" action="{{ url_for('converters.clone_workflow', id=wf.id) }}" style="display:inline;" onsubmit="return confirm('Clone this workflow?');">
+              <button type="submit" class="btn btn-sm btn-secondary ms-1">Clone</button>
+            </form>
           </span>
         </li>
       {% else %}

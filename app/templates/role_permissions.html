@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Assign Permissions{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Assign Permissions to Role: {{ role.name }}</h2>
+  <form method="POST">
+    {{ form.hidden_tag() }}
+    <div class="mb-3">
+      {{ form.permissions.label(class="form-label") }}
+      {{ form.permissions(class="form-select") }}
+    </div>
+    <button type="submit" name="add" class="btn btn-success">Add Permission</button>
+  </form>
+  <h4 class="mt-4">Current Permissions</h4>
+  <ul class="list-group">
+    {% for perm in role.permissions %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      {{ perm.name }}
+      <form method="POST" style="display:inline;">
+        <button type="submit" name="remove" value="{{ perm.id }}" class="btn btn-sm btn-danger">Remove</button>
+      </form>
+    </li>
+    {% else %}
+    <li class="list-group-item text-muted">No permissions assigned.</li>
+    {% endfor %}
+  </ul>
+  <a href="{{ url_for('auth.list_roles') }}" class="btn btn-secondary mt-3">Back to Roles</a>
+</div>
+{% endblock %} 

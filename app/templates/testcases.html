@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Test Cases</h2>
+    <div>
+      <a href="{{ url_for('testcases.create_testcase') }}" class="btn btn-success">+ New Test Case</a>
+      <a href="{{ url_for('testcases.testcases_auditlog') }}" class="btn btn-outline-secondary ms-2">Audit Log</a>
+    </div>
+  </div>
+  <form id="bulk-execute-form" method="POST" action="{{ url_for('testcases.bulk_execute_testcases') }}">
+    <div class="table-responsive">
+      <table class="table table-bordered align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col"><input type="checkbox" id="select-all"></th>
+            <th scope="col">Name</th>
+            <th scope="col">Workflows</th>
+            <th scope="col">Last Run</th>
+            <th scope="col">Last Status</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for tc in testcases %}
+          <tr>
+            <td><input type="checkbox" name="testcase_ids" value="{{ tc.id }}"></td>
+            <td><a href="{{ url_for('testcases.testcase_detail', id=tc.id) }}">{{ tc.name }}</a></td>
+            <td>
+              {% if tc.workflows_assoc|length > 0 %}
+                {% for assoc in tc.workflows_assoc %}
+                  {{ assoc.workflow.name }}{% if assoc.sample_file %} <span title="Sample file uploaded">📎</span>{% endif %}{% if not loop.last %}, {% endif %}
+                {% endfor %}
+              {% else %}
+                <span class="text-muted">None</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if tc.test_runs|length > 0 %}
+                {{ tc.test_runs[-1].executed_at.strftime('%Y-%m-%d %H:%M') }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>
+              {% if tc.test_runs|length > 0 %}
+                <a href="{{ url_for('testcases.testrun_detail', id=tc.test_runs[-1].id) }}" style="text-decoration:none;">
+                  <span class="badge {% if tc.test_runs[-1].status == 'passed' %}bg-success{% elif tc.test_runs[-1].status == 'failed' %}bg-danger{% else %}bg-secondary{% endif %}">
+                    {{ tc.test_runs[-1].status|capitalize }}
+                  </span>
+                </a>
+              {% else %}
+                <span class="badge bg-secondary">Never Run</span>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{{ url_for('testcases.edit_testcase', id=tc.id) }}" class="btn btn-sm btn-primary">Edit</a>
+              <form method="POST" action="{{ url_for('testcases.delete_testcase', id=tc.id) }}" style="display:inline-block;" onsubmit="return confirm('Delete this test case?');">
+                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+              </form>
+              <form method="POST" action="{{ url_for('testcases.bulk_execute_testcases') }}" style="display:inline-block;">
+                <input type="hidden" name="testcase_ids" value="{{ tc.id }}">
+                <button type="submit" class="btn btn-sm btn-warning">Run</button>
+              </form>
+              <form method="POST" action="{{ url_for('testcases.clone_testcase', id=tc.id) }}" style="display:inline-block;" onsubmit="return confirm('Clone this test case?');">
+                <button type="submit" class="btn btn-sm btn-secondary">Clone</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <button type="submit" class="btn btn-primary mt-2">Execute Selected</button>
+  </form>
+</div>
+<script>
+  document.getElementById('select-all').addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('input[name="testcase_ids"]');
+    for (const cb of checkboxes) {
+      cb.checked = this.checked;
+    }
+  });
+</script>
+{% endblock %} 

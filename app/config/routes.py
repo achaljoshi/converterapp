@@ -18,6 +18,8 @@ import csv
 from flask import Response
 import io
 from lxml import etree
+from app.testcases import permission_required
+from datetime import datetime
 
 def admin_required(f):
     from functools import wraps
@@ -30,14 +32,14 @@ def admin_required(f):
 
 @config.route('/config')
 @login_required
-@admin_required
+@permission_required('config_manage')
 def configuration():
     configs = Configuration.query.all()
     return render_template('config.html', configs=configs)
 
 @config.route('/config/add', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@permission_required('config_manage')
 def add_configuration():
     form = ConfigurationForm()
     # Populate file_type choices from FileType table
@@ -85,7 +87,7 @@ def add_configuration():
 
 @config.route('/config/edit/<int:config_id>', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@permission_required('config_manage')
 def edit_configuration(config_id):
     config_obj = Configuration.query.get_or_404(config_id)
     form = ConfigurationForm(obj=config_obj)
@@ -141,7 +143,7 @@ def edit_configuration(config_id):
 
 @config.route('/config/delete/<int:config_id>', methods=['POST'])
 @login_required
-@admin_required
+@permission_required('config_manage')
 def delete_configuration(config_id):
     config_obj = Configuration.query.get_or_404(config_id)
     db.session.delete(config_obj)
@@ -159,7 +161,7 @@ def delete_configuration(config_id):
 
 @config.route('/config/test/<int:config_id>', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@permission_required('config_manage')
 def test_extraction(config_id):
     config_obj = Configuration.query.get_or_404(config_id)
     extracted = None
@@ -537,7 +539,7 @@ def extract_xml_fields(content, rules_json):
 
 @config.route('/config/auditlog/<int:config_id>')
 @login_required
-@admin_required
+@permission_required('auditlog_view')
 def config_auditlog(config_id):
     config_obj = Configuration.query.get_or_404(config_id)
     # Filter audit logs for this configuration (by name and filetype)
@@ -601,7 +603,7 @@ def config_auditlog(config_id):
 # Export audit logs as CSV for a configuration
 @config.route('/config/auditlog/export/<int:config_id>')
 @login_required
-@admin_required
+@permission_required('auditlog_view')
 def export_config_auditlog(config_id):
     config_obj = Configuration.query.get_or_404(config_id)
     logs = AuditLog.query.filter(
@@ -626,7 +628,7 @@ filetypes = Blueprint('filetypes', __name__)
 
 @filetypes.route('/filetypes')
 @login_required
-@admin_required
+@permission_required('filetype_manage')
 def list_filetypes():
     search = request.args.get('search', '').strip()
     query = FileType.query
@@ -647,7 +649,7 @@ def list_filetypes():
 
 @filetypes.route('/filetypes/add', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@permission_required('filetype_manage')
 def add_filetype():
     errors = []
     if request.method == 'POST':
@@ -679,7 +681,7 @@ def add_filetype():
 
 @filetypes.route('/filetypes/delete/<int:filetype_id>', methods=['POST'])
 @login_required
-@admin_required
+@permission_required('filetype_manage')
 def delete_filetype(filetype_id):
     ft = FileType.query.get_or_404(filetype_id)
     # Prevent deletion if used in any configuration
@@ -697,7 +699,7 @@ def delete_filetype(filetype_id):
 
 @filetypes.route('/filetypes/edit/<int:filetype_id>', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@permission_required('filetype_manage')
 def edit_filetype(filetype_id):
     ft = FileType.query.get_or_404(filetype_id)
     errors = []
@@ -734,7 +736,7 @@ def edit_filetype(filetype_id):
 
 @filetypes.route('/filetypes/toggle/<int:filetype_id>', methods=['POST'])
 @login_required
-@admin_required
+@permission_required('filetype_manage')
 def toggle_filetype(filetype_id):
     ft = FileType.query.get_or_404(filetype_id)
     ft.active = not ft.active
@@ -747,7 +749,7 @@ def toggle_filetype(filetype_id):
 
 @filetypes.route('/filetypes/auditlog')
 @login_required
-@admin_required
+@permission_required('auditlog_view')
 def auditlog():
     query = AuditLog.query
     username = request.args.get('username', '').strip()
@@ -762,14 +764,12 @@ def auditlog():
     if filetype:
         query = query.filter(AuditLog.filetype.ilike(f'%{filetype}%'))
     if date_from:
-        from datetime import datetime
         try:
             dt_from = datetime.strptime(date_from, '%Y-%m-%d')
             query = query.filter(AuditLog.timestamp >= dt_from)
         except Exception:
             pass
     if date_to:
-        from datetime import datetime, timedelta
         try:
             dt_to = datetime.strptime(date_to, '%Y-%m-%d') + timedelta(days=1)
             query = query.filter(AuditLog.timestamp < dt_to)
@@ -800,7 +800,7 @@ def init_app(app):
 # --- Backfill script for AuditLog entries ---
 @config.route('/config/backfill_auditlog')
 @login_required
-@admin_required
+@permission_required('config_manage')
 def backfill_auditlog():
     configs = Configuration.query.all()
     updated = 0
@@ -825,14 +825,14 @@ converters = Blueprint('converters', __name__)
 
 @converters.route('/config/converters')
 @login_required
-@admin_required
+@permission_required('config_manage')
 def list_converters():
     configs = ConverterConfig.query.all()
     return render_template('converter_configs.html', configs=configs)
 
 @converters.route('/config/converters/add', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@permission_required('config_manage')
 def add_converter():
     if request.method == 'POST':
         # Validate JSON
@@ -864,7 +864,7 @@ def add_converter():
 
 @converters.route('/config/converters/edit/<int:config_id>', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@permission_required('config_manage')
 def edit_converter(config_id):
     config = ConverterConfig.query.get_or_404(config_id)
     if request.method == 'POST':
@@ -896,7 +896,7 @@ def edit_converter(config_id):
 
 @converters.route('/config/converters/delete/<int:config_id>', methods=['POST'])
 @login_required
-@admin_required
+@permission_required('config_manage')
 def delete_converter(config_id):
     config = ConverterConfig.query.get_or_404(config_id)
     db.session.delete(config)
@@ -906,14 +906,14 @@ def delete_converter(config_id):
 
 @converters.route('/test-workflow', methods=['GET'])
 @login_required
-@admin_required
+@permission_required('workflow_manage')
 def test_workflow():
     workflows = Workflow.query.order_by(Workflow.created_at.desc()).all()
     return render_template('test_workflow_list.html', workflows=workflows)
 
 @converters.route('/test-workflow/new', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@permission_required('workflow_manage')
 def new_workflow():
     from flask import request, redirect, url_for, flash
     import json
@@ -941,7 +941,7 @@ def new_workflow():
 
 @converters.route('/test-workflow/<int:id>/delete', methods=['POST'])
 @login_required
-@admin_required
+@permission_required('workflow_manage')
 def delete_workflow(id):
     workflow = Workflow.query.get_or_404(id)
     workflow_id = workflow.id
@@ -961,7 +961,7 @@ def delete_workflow(id):
 
 @converters.route('/test-workflow/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@permission_required('workflow_manage')
 def edit_workflow(id):
     import json
     workflow = Workflow.query.get_or_404(id)
@@ -993,10 +993,11 @@ def edit_workflow(id):
 
 @converters.route('/test-workflow/<int:id>/execute', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@permission_required('workflow_manage')
 def execute_workflow(id):
     import json, os, tempfile
     from flask import session, request
+    from lxml import etree
     workflow = Workflow.query.get_or_404(id)
     stages = json.loads(workflow.stages)
     converter_configs = {str(cfg.id): cfg for cfg in ConverterConfig.query.all()}
@@ -1057,10 +1058,14 @@ def execute_workflow(id):
         template_content = None
         for ext in ['xml', 'txt']:
             template_path = os.path.join(template_dir, f'{stage_cfg.target_type}.{ext}.j2')
+            print(f"[DEBUG] Looking for template: {template_path}")
             if os.path.exists(template_path):
                 with open(template_path, encoding='utf-8') as f:
                     template_content = f.read()
+                print(f"[DEBUG] Loaded template: {template_path}")
                 break
+        else:
+            print(f"[DEBUG] No template found for {stage_cfg.target_type}")
         if template_content:
             try:
                 mapping_rules = json.loads(stage_cfg.rules)
@@ -1070,10 +1075,12 @@ def execute_workflow(id):
             from ..models import FileType
             source_filetype = FileType.query.filter_by(name=stage_cfg.source_type).first()
             extraction_rules = source_filetype.extraction_rules if source_filetype else '{}'
+            print(f"[DEBUG] Stage {stage_idx+1} input for extraction (first 500 chars):\n", prev_output[:500])
             if source_filetype and source_filetype.file_mode == 'xml':
                 extracted = extract_xml_with_xpaths(prev_output, extraction_rules)
             else:
                 extracted = extract_generic_text_fields(prev_output, template_content)
+            print(f"[DEBUG] Stage {stage_idx+1} extracted fields:", extracted)
             mapped_data = {}
             for tgt_var in re.findall(r'@@(.*?)@@', template_content):
                 map_cfg = mapping_rules.get(tgt_var, {}) if isinstance(mapping_rules.get(tgt_var), dict) else {}
@@ -1099,12 +1106,77 @@ def execute_workflow(id):
                 var = match.group(1)
                 return str(mapped_data.get(var, ''))
             expected_output = re.sub(r'@@(.*?)@@', replace_vars, template_content)
+            print(f"[DEBUG] Stage {stage_idx+1} expected_output (first 500 chars):\n", expected_output[:500])
     # Handle actual file upload and diff
     if request.method == 'POST' and 'actual_file' in request.files and actual_content is None:
         file = request.files['actual_file']
         if file and file.filename:
             actual_content = file.read().decode('utf-8')
             # Side-by-side HTML diff
+            html_diff = None
+            if expected_output and actual_content:
+                # XML canonicalization if both are XML
+                def is_xml(text):
+                    try:
+                        etree.fromstring(text.encode('utf-8'))
+                        return True
+                    except Exception:
+                        return False
+                if is_xml(expected_output) and is_xml(actual_content):
+                    try:
+                        parser = etree.XMLParser(remove_blank_text=True)
+                        expected_tree = etree.fromstring(expected_output.encode('utf-8'), parser)
+                        actual_tree = etree.fromstring(actual_content.encode('utf-8'), parser)
+                        expected_c14n = etree.tostring(expected_tree, pretty_print=True).decode('utf-8')
+                        actual_c14n = etree.tostring(actual_tree, pretty_print=True).decode('utf-8')
+                        import difflib
+                        html_diff = difflib.HtmlDiff(wrapcolumn=80).make_table(
+                            expected_c14n.splitlines(),
+                            actual_c14n.splitlines(),
+                            fromdesc='Expected Output',
+                            todesc='Actual Uploaded File',
+                            context=True, numlines=3
+                        )
+                    except Exception as e:
+                        error = f"XML diff error: {e}"
+                else:
+                    import difflib
+                    html_diff = difflib.HtmlDiff(wrapcolumn=80).make_table(
+                        expected_output.splitlines(),
+                        actual_content.splitlines(),
+                        fromdesc='Expected Output',
+                        todesc='Actual Uploaded File',
+                        context=True, numlines=3
+                    )
+            # Store actual file for this stage
+            session[files_key][str(stage_idx)] = actual_content
+            session.modified = True
+    # If actual_content is present, generate diff if not already done
+    if actual_content and html_diff is None and expected_output:
+        def is_xml(text):
+            try:
+                etree.fromstring(text.encode('utf-8'))
+                return True
+            except Exception:
+                return False
+        if is_xml(expected_output) and is_xml(actual_content):
+            try:
+                parser = etree.XMLParser(remove_blank_text=True)
+                expected_tree = etree.fromstring(expected_output.encode('utf-8'), parser)
+                actual_tree = etree.fromstring(actual_content.encode('utf-8'), parser)
+                expected_c14n = etree.tostring(expected_tree, pretty_print=True).decode('utf-8')
+                actual_c14n = etree.tostring(actual_tree, pretty_print=True).decode('utf-8')
+                import difflib
+                html_diff = difflib.HtmlDiff(wrapcolumn=80).make_table(
+                    expected_c14n.splitlines(),
+                    actual_c14n.splitlines(),
+                    fromdesc='Expected Output',
+                    todesc='Actual Uploaded File',
+                    context=True, numlines=3
+                )
+            except Exception as e:
+                error = f"XML diff error: {e}"
+        else:
             import difflib
             html_diff = difflib.HtmlDiff(wrapcolumn=80).make_table(
                 expected_output.splitlines(),
@@ -1113,26 +1185,17 @@ def execute_workflow(id):
                 todesc='Actual Uploaded File',
                 context=True, numlines=3
             )
-            # Store actual file for this stage
-            session[files_key][str(stage_idx)] = actual_content
-            session.modified = True
-            # Store expected output as next input for next stage if passed
-            # (done in Pass action)
-    # If actual_content is present, generate diff
-    if actual_content and html_diff is None and expected_output:
-        import difflib
-        html_diff = difflib.HtmlDiff(wrapcolumn=80).make_table(
-            expected_output.splitlines(),
-            actual_content.splitlines(),
-            fromdesc='Expected Output',
-            todesc='Actual Uploaded File',
-            context=True, numlines=3
-        )
+    # Update session input for next stage if passed
+    if request.method == 'POST' and 'action' in request.form and request.form.get('action') == 'pass':
+        # Use the generated expected_output as input for the next stage
+        print(f"[DEBUG] Passing output to next stage (first 500 chars):\n", expected_output[:500])
+        session[input_key] = expected_output
+        session.modified = True
     return render_template('test_workflow_execute.html', workflow=workflow, stages=stages, converter_configs=converter_configs, stage_idx=stage_idx, stage_cfg=stage_cfg, expected_output=expected_output, actual_content=actual_content, html_diff=html_diff, error=error, done=False, failed=False, need_input=False)
 
 @converters.route('/test-workflow/<int:id>/audit', methods=['GET'])
 @login_required
-@admin_required
+@permission_required('auditlog_view')
 def audit_workflow(id):
     workflow = Workflow.query.get_or_404(id)
     logs = WorkflowAuditLog.query.filter_by(workflow_id=workflow.id).order_by(WorkflowAuditLog.timestamp.desc()).all()
@@ -1140,7 +1203,7 @@ def audit_workflow(id):
 
 @converters.route('/data-generator', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@permission_required('config_manage')
 def data_generator():
     import os, json, tempfile
     from flask import request, render_template, send_file, url_for, current_app
@@ -1185,7 +1248,7 @@ def data_generator():
 
 @converters.route('/data-generator/download/<filename>')
 @login_required
-@admin_required
+@permission_required('config_manage')
 def download_generated(filename):
     import tempfile, os
     temp_dir = tempfile.gettempdir()
@@ -1193,7 +1256,7 @@ def download_generated(filename):
 
 @converters.route('/converters/test', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@permission_required('config_manage')
 def converter_test():
     converter_configs = ConverterConfig.query.all()
     def converter_to_dict(c):
@@ -1284,12 +1347,11 @@ def converter_test():
                             elif transform == 'lowercase':
                                 value = str(value).lower()
                             elif transform == 'date_format' and date_format:
-                                import datetime
                                 try:
                                     dt = None
                                     for fmt in ('%Y-%m-%d', '%Y%m%d', '%d-%m-%Y', '%Y/%m/%d'):
                                         try:
-                                            dt = datetime.datetime.strptime(str(value), fmt)
+                                            dt = datetime.strptime(str(value), fmt)
                                             break
                                         except Exception:
                                             continue
@@ -1377,7 +1439,7 @@ def extract_xml_with_xpaths(file_content, rules_json):
 
 @converters.route('/config/get_filetypes')
 @login_required
-@admin_required
+@permission_required('config_manage')
 def get_filetypes():
     from ..models import FileType
     filetypes = [ft.name for ft in FileType.query.order_by(FileType.name).all()]
@@ -1385,7 +1447,7 @@ def get_filetypes():
 
 @converters.route('/upload-template', methods=['POST'])
 @login_required
-@admin_required
+@permission_required('config_manage')
 def upload_template():
     import os
     from flask import request, current_app, redirect, url_for, flash
@@ -1404,7 +1466,7 @@ def upload_template():
 
 @converters.route('/filetypes/template/<filename>')
 @login_required
-@admin_required
+@permission_required('config_manage')
 def download_template(filename):
     import os
     from flask import send_file
@@ -1419,3 +1481,62 @@ def download_template(filename):
         return send_file(file_path, mimetype='text/plain')
     else:
         return send_file(file_path)
+
+@converters.route('/test-workflow/<int:id>/clone', methods=['POST'])
+@login_required
+@permission_required('workflow_manage')
+def clone_workflow(id):
+    import json
+    orig = Workflow.query.get_or_404(id)
+    new_wf = Workflow(
+        name=orig.name + ' (Clone)',
+        stages=orig.stages,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow()
+    )
+    db.session.add(new_wf)
+    db.session.commit()
+    db.session.add(WorkflowAuditLog(
+        workflow_id=new_wf.id,
+        user=current_user.username,
+        action='clone',
+        details=f"Cloned workflow: {orig.name} (ID: {orig.id}) to {new_wf.name} (ID: {new_wf.id})"
+    ))
+    db.session.commit()
+    flash('Workflow cloned successfully!', 'success')
+    return redirect(url_for('converters.edit_workflow', id=new_wf.id))
+
+@converters.route('/config/converters/<int:id>/clone', methods=['POST'])
+@login_required
+@permission_required('config_manage')
+def clone_converter_config(id):
+    orig = ConverterConfig.query.get_or_404(id)
+    new_cfg = ConverterConfig(
+        name=orig.name + ' (Clone)',
+        description=orig.description,
+        source_type=orig.source_type,
+        target_type=orig.target_type,
+        rules=orig.rules,
+        schema=orig.schema
+    )
+    db.session.add(new_cfg)
+    db.session.commit()
+    flash('Converter config cloned successfully!', 'success')
+    return redirect(url_for('converters.edit_converter', config_id=new_cfg.id))
+
+@filetypes.route('/filetypes/<int:id>/clone', methods=['POST'])
+@login_required
+@permission_required('filetype_manage')
+def clone_filetype(id):
+    orig = FileType.query.get_or_404(id)
+    new_ft = FileType(
+        name=orig.name + ' (Clone)',
+        description=orig.description,
+        active=orig.active,
+        extraction_rules=orig.extraction_rules,
+        file_mode=orig.file_mode
+    )
+    db.session.add(new_ft)
+    db.session.commit()
+    flash('File type cloned successfully!', 'success')
+    return redirect(url_for('filetypes.edit_filetype', filetype_id=new_ft.id))

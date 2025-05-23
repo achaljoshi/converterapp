@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Roles{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Roles</h2>
+  <a href="{{ url_for('auth.add_role') }}" class="btn btn-success mb-3">+ Add Role</a>
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Permissions</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for role in roles %}
+      <tr>
+        <td>{{ role.name }}</td>
+        <td>{{ role.description }}</td>
+        <td>
+          {% for perm in role.permissions %}
+            <span class="badge bg-info text-dark">{{ perm.name }}</span>
+          {% else %}
+            <span class="text-muted">No permissions</span>
+          {% endfor %}
+        </td>
+        <td>
+          <a href="{{ url_for('auth.edit_role', role_id=role.id) }}" class="btn btn-sm btn-warning">Edit</a>
+          <form method="POST" action="{{ url_for('auth.delete_role', role_id=role.id) }}" style="display:inline;">
+            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this role?');">Delete</button>
+          </form>
+          <a href="{{ url_for('auth.assign_permissions', role_id=role.id) }}" class="btn btn-sm btn-primary">Assign Permissions</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %} 

@@ -1,11 +1,156 @@
+{% set bar_datasets = [] %}
+{% for status in bar_statuses %}
+  {% set _ = bar_datasets.append({
+    'label': status|capitalize,
+    'data': bar_data[status],
+    'backgroundColor': '#198754' if status == 'passed' else ('#dc3545' if status == 'failed' else '#6c757d')
+  }) %}
+{% endfor %}
 {% extends 'base.html' %}
 {% block title %}Dashboard{% endblock %}
 {% block content %}
-<div class="card">
-    <div class="card-body">
-        <h3>Welcome, {{ user.username }}!</h3>
-        <p>Your role: <strong>{{ user.role }}</strong></p>
-        <p>This is your dashboard. Navigation to other screens will appear here.</p>
+<div class="container mt-4">
+  <h2 class="mb-4">Dashboard</h2>
+  <!-- KPI Cards -->
+  <div class="row mb-4">
+    <div class="col-md-2 col-6 mb-3">
+      <div class="card text-center">
+        <div class="card-body">
+          <h6 class="card-title">Test Cases</h6>
+          <h3>{{ total_cases }}</h3>
+        </div>
+      </div>
     </div>
+    <div class="col-md-2 col-6 mb-3">
+      <a href="{{ url_for('testcases.list_testruns') }}" style="text-decoration:none; color:inherit;">
+      <div class="card text-center">
+        <div class="card-body">
+          <h6 class="card-title">Test Runs</h6>
+          <h3>{{ total_runs }}</h3>
+        </div>
+      </div>
+      </a>
+    </div>
+    <div class="col-md-2 col-6 mb-3">
+      <a href="{{ url_for('testcases.list_testruns', status='passed') }}" style="text-decoration:none; color:inherit;">
+      <div class="card text-center">
+        <div class="card-body">
+          <h6 class="card-title">Passed</h6>
+          <h3 class="text-success">{{ passed_runs }}</h3>
+        </div>
+      </div>
+      </a>
+    </div>
+    <div class="col-md-2 col-6 mb-3">
+      <a href="{{ url_for('testcases.list_testruns', status='failed') }}" style="text-decoration:none; color:inherit;">
+      <div class="card text-center">
+        <div class="card-body">
+          <h6 class="card-title">Failed</h6>
+          <h3 class="text-danger">{{ failed_runs }}</h3>
+        </div>
+      </div>
+      </a>
+    </div>
+    <div class="col-md-2 col-6 mb-3">
+      <a href="{{ url_for('testcases.list_testruns', status='error') }}" style="text-decoration:none; color:inherit;">
+      <div class="card text-center">
+        <div class="card-body">
+          <h6 class="card-title">Other/Error</h6>
+          <h3 class="text-warning">{{ error_runs }}</h3>
+        </div>
+      </div>
+      </a>
+    </div>
+    <div class="col-md-2 col-6 mb-3">
+      <div class="card text-center">
+        <div class="card-body">
+          <h6 class="card-title">Last Run</h6>
+          <h6>{% if last_run %}{{ last_run.executed_at.strftime('%Y-%m-%d %H:%M') }}{% else %}-{% endif %}</h6>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Charts -->
+  <div class="row mb-4">
+    <div class="col-md-7 mb-3">
+      <div class="card">
+        <div class="card-body">
+          <h6 class="card-title">Test Runs by Status (Bar Chart)</h6>
+          <canvas id="barChart"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-5 mb-3">
+      <div class="card">
+        <div class="card-body">
+          <h6 class="card-title">Pass/Fail Distribution (Pie Chart)</h6>
+          <canvas id="pieChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Recent Test Runs Table -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <h6 class="card-title">Recent Test Runs</h6>
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Test Case</th>
+              <th>Workflow</th>
+              <th>Status</th>
+              <th>Executed At</th>
+              <th>Duration (s)</th>
+              <th>Output</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for run in recent_runs %}
+            <tr>
+              <td>{{ run.test_case.name if run.test_case else '-' }}</td>
+              <td>{{ run.test_case.workflow.name if run.test_case and run.test_case.workflow else '-' }}</td>
+              <td><span class="badge {% if run.status == 'passed' %}bg-success{% elif run.status == 'failed' %}bg-danger{% else %}bg-secondary{% endif %}">{{ run.status|capitalize }}</span></td>
+              <td>{{ run.executed_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+              <td>{{ run.duration }}</td>
+              <td><pre class="mb-0" style="max-width:250px; max-height:40px; overflow:auto;">{{ run.output|truncate(80) }}</pre></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Bar Chart
+  const barCtx = document.getElementById('barChart').getContext('2d');
+  const barChart = new Chart(barCtx, {
+    type: 'bar',
+    data: {
+      labels: {{ bar_labels|tojson }},
+      datasets: {{ bar_datasets|tojson }}
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'top' } },
+      scales: { x: { title: { display: true, text: 'Date' } }, y: { beginAtZero: true, title: { display: true, text: 'Runs' } } }
+    }
+  });
+  // Pie Chart
+  const pieCtx = document.getElementById('pieChart').getContext('2d');
+  const pieChart = new Chart(pieCtx, {
+    type: 'pie',
+    data: {
+      labels: {{ pie_labels|tojson }},
+      datasets: [{
+        data: {{ pie_data|tojson }},
+        backgroundColor: ['#198754', '#dc3545', '#6c757d', '#ffc107']
+      }]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'top' } } }
+  });
+</script>
 {% endblock %} 

@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Test Case Audit Log</h2>
+  <form class="row g-3 mb-3" method="get">
+    <div class="col-md-3">
+      <label for="user" class="form-label">User</label>
+      <input type="text" name="user" id="user" class="form-control" value="{{ user or '' }}">
+    </div>
+    <div class="col-md-3">
+      <label for="action" class="form-label">Action</label>
+      <select name="action" id="action" class="form-select">
+        <option value="">All</option>
+        <option value="create" {% if action=='create' %}selected{% endif %}>Create</option>
+        <option value="edit" {% if action=='edit' %}selected{% endif %}>Edit</option>
+        <option value="delete" {% if action=='delete' %}selected{% endif %}>Delete</option>
+        <option value="execute" {% if action=='execute' %}selected{% endif %}>Execute</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label for="date" class="form-label">Date</label>
+      <input type="date" name="date" id="date" class="form-control" value="{{ date or '' }}">
+    </div>
+    <div class="col-md-3 align-self-end">
+      <button type="submit" class="btn btn-primary">Filter</button>
+      <a href="{{ url_for('testcases.testcases_auditlog') }}" class="btn btn-secondary ms-2">Clear</a>
+    </div>
+  </form>
+  <div class="table-responsive">
+    <table class="table table-bordered align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>User</th>
+          <th>Action</th>
+          <th>Timestamp</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td>{{ log.user }}</td>
+          <td>{{ log.action }}</td>
+          <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+          <td><pre class="mb-0" style="max-width:400px; max-height:60px; overflow:auto;">{{ log.details }}</pre></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %} 

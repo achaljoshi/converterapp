@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Test Case: {{ testcase.name }}</h2>
+  <div class="mb-3">
+    <strong>Workflows:</strong>
+    {% if testcase.workflows_assoc|length > 0 %}
+      <ul>
+        {% for assoc in testcase.workflows_assoc %}
+          <li>
+            {{ assoc.workflow.name }}
+            {% if assoc.sample_file %}
+              - <a href="/{{ assoc.sample_file }}" download>Download Sample File</a>
+            {% else %}
+              <span class="text-muted">No sample file</span>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <span class="text-muted">None</span>
+    {% endif %}
+    <br>
+    <strong>Description:</strong> {{ testcase.description or '-' }}<br>
+    <a href="{{ url_for('testcases.edit_testcase', id=testcase.id) }}" class="btn btn-primary btn-sm">Edit</a>
+    <form method="POST" action="{{ url_for('testcases.clone_testcase', id=testcase.id) }}" style="display:inline-block;" onsubmit="return confirm('Clone this test case?');">
+      <button type="submit" class="btn btn-sm btn-secondary">Clone</button>
+    </form>
+    <a href="{{ url_for('testcases.list_testcases') }}" class="btn btn-secondary btn-sm ms-2">Back to List</a>
+  </div>
+  <h4>Test Run History</h4>
+  <div class="table-responsive">
+    <table class="table table-bordered align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Status</th>
+          <th>Executed At</th>
+          <th>Duration (s)</th>
+          <th>Output</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for run in runs %}
+        <tr>
+          <td><span class="badge {% if run.status == 'passed' %}bg-success{% elif run.status == 'failed' %}bg-danger{% else %}bg-secondary{% endif %}">{{ run.status|capitalize }}</span></td>
+          <td>{{ run.executed_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+          <td>{{ run.duration }}</td>
+          <td><pre class="mb-0" style="max-width:200px; max-height:40px; overflow:auto;">{{ run.output|truncate(60) }}</pre></td>
+          <td><a href="{{ url_for('testcases.testrun_detail', id=run.id) }}" class="btn btn-sm btn-info">View</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %} 

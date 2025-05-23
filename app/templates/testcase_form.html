@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2>{{ action }} Test Case</h2>
+  <form method="POST" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+    <div class="mb-3">
+      {{ form.name.label(class="form-label") }}
+      {{ form.name(class="form-control", placeholder="Enter test case name") }}
+      {% for error in form.name.errors %}
+        <div class="text-danger small">{{ error }}</div>
+      {% endfor %}
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Workflows</label>
+      <div id="workflow-rows"></div>
+      <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="add-workflow-btn">+ Add Workflow</button>
+      <div id="workflow-errors">
+        {% for error in form.workflows.errors %}
+          <div class="text-danger small">{{ error }}</div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="mb-3">
+      {{ form.description.label(class="form-label") }}
+      {{ form.description(class="form-control", placeholder="Description (optional)") }}
+      {% for error in form.description.errors %}
+        <div class="text-danger small">{{ error }}</div>
+      {% endfor %}
+    </div>
+    <div class="mb-3">
+      {{ form.schedule.label(class="form-label") }}
+      {{ form.schedule(class="form-select") }}
+      {% for error in form.schedule.errors %}
+        <div class="text-danger small">{{ error }}</div>
+      {% endfor %}
+    </div>
+    <button type="submit" class="btn btn-primary">{{ action }}</button>
+    <a href="{{ url_for('testcases.list_testcases') }}" class="btn btn-secondary ms-2">Cancel</a>
+  </form>
+</div>
+
+<script>
+  // Workflows data from backend
+  const workflows = {{ form.workflows.choices|map('list')|list|tojson }}.map(function(w) { return {id: w[0], name: w[1]}; });
+  function getAvailableWorkflows(selected) {
+    return workflows.filter(w => !selected.includes(w.id.toString()));
+  }
+  function createWorkflowRow(idx, selectedId) {
+    const row = document.createElement('div');
+    row.className = 'row mb-2 align-items-end workflow-row';
+    row.dataset.idx = idx;
+    // Workflow select
+    const col1 = document.createElement('div');
+    col1.className = 'col-md-5';
+    const select = document.createElement('select');
+    select.name = `workflow_${idx}`;
+    select.className = 'form-select workflow-select';
+    let options = document.createElement('option');
+    options.value = '';
+    options.textContent = 'Select Workflow';
+    select.appendChild(options);
+    workflows.forEach(w => {
+      const option = document.createElement('option');
+      option.value = w.id;
+      option.textContent = w.name;
+      if (selectedId == w.id) option.selected = true;
+      // Disable if already selected in another row
+      if (workflowRows.some((r, i) => r.workflow == w.id && i !== idx)) option.disabled = true;
+      select.appendChild(option);
+    });
+    col1.appendChild(select);
+    // File input
+    const col2 = document.createElement('div');
+    col2.className = 'col-md-5';
+    const file = document.createElement('input');
+    file.type = 'file';
+    file.name = `sample_file_${idx}`;
+    file.className = 'form-control';
+    col2.appendChild(file);
+    // Remove button
+    const col3 = document.createElement('div');
+    col3.className = 'col-md-2';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-danger btn-sm remove-workflow-btn';
+    btn.textContent = 'Remove';
+    col3.appendChild(btn);
+    // Assemble row
+    row.appendChild(col1);
+    row.appendChild(col2);
+    row.appendChild(col3);
+    return row;
+  }
+  let workflowRows = [];
+  function renderWorkflowRowsDOM() {
+    const container = document.getElementById('workflow-rows');
+    container.innerHTML = '';
+    workflowRows.forEach((row, idx) => {
+      container.appendChild(createWorkflowRow(idx, row.workflow));
+    });
+  }
+  document.getElementById('add-workflow-btn').addEventListener('click', function() {
+    workflowRows.push({workflow: ''});
+    renderWorkflowRowsDOM();
+  });
+  document.getElementById('workflow-rows').addEventListener('change', function(e) {
+    if (e.target.classList.contains('workflow-select')) {
+      const idx = parseInt(e.target.closest('.workflow-row').dataset.idx);
+      workflowRows[idx].workflow = e.target.value;
+      renderWorkflowRowsDOM();
+    }
+  });
+  document.getElementById('workflow-rows').addEventListener('click', function(e) {
+    if (e.target.classList.contains('remove-workflow-btn')) {
+      const idx = parseInt(e.target.closest('.workflow-row').dataset.idx);
+      workflowRows.splice(idx, 1);
+      renderWorkflowRowsDOM();
+    }
+  });
+  // If editing, prepopulate rows
+  document.addEventListener('DOMContentLoaded', function() {
+    {% if form.workflows.data %}
+      var workflowIds = {{ form.workflows.data|tojson }};
+      workflowRows = workflowIds.map(function(id) { return {workflow: id}; });
+      renderWorkflowRowsDOM();
+    {% endif %}
+  });
+</script>
+{% endblock %} 

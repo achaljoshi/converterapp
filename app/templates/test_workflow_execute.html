@@ -34,6 +34,23 @@
         <a href="{{ url_for('converters.test_workflow') }}" class="btn btn-outline-secondary ms-2">Back to Workflows</a>
       </form>
     {% else %}
+      <div class="mb-4">
+        <h5>Workflow Progress</h5>
+        <ol class="list-group list-group-numbered mb-3">
+          {% for stage_id in stages %}
+            {% set idx = loop.index0 %}
+            {% set cfg = converter_configs[stage_id|string] %}
+            <li class="list-group-item {% if idx == stage_idx %}active{% elif idx < stage_idx %}list-group-item-success{% endif %}">
+              <b>Stage {{ idx + 1 }}:</b> {{ cfg.name }} ({{ cfg.source_type }} → {{ cfg.target_type }})
+              {% if idx < stage_idx %}
+                <span class="badge bg-success ms-2">Passed</span>
+              {% elif idx == stage_idx %}
+                <span class="badge bg-primary ms-2">Current</span>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ol>
+      </div>
       <div class="card mb-3">
         <div class="card-body">
           <h5>Stage {{ stage_idx + 1 }} of {{ stages|length }}</h5>
@@ -41,12 +58,18 @@
           <b>Converter:</b> {{ cfg.name }}<br>
           <b>Source Type:</b> {{ cfg.source_type }}<br>
           <b>Target Type:</b> {{ cfg.target_type }}<br>
+          <b>Input for this stage:</b>
+          {% if stage_idx == 0 %}
+            <span class="text-info">User-uploaded initial input</span>
+          {% else %}
+            <span class="text-success">Output from previous stage</span>
+          {% endif %}
         </div>
       </div>
       <form method="POST" enctype="multipart/form-data">
         {% if not actual_content %}
         <div class="mb-3">
-          <label class="form-label">Upload Actual File for this Stage:</label>
+          <label class="form-label">Upload Actual File for this Stage (for comparison):</label>
           <input type="file" name="actual_file" class="form-control" required>
         </div>
         {% endif %}
@@ -55,7 +78,7 @@
         {% endif %}
         {% if expected_output and actual_content %}
           <div class="mb-3">
-            <label class="form-label">Expected Output:</label>
+            <label class="form-label">Expected Output (system-generated):</label>
             <pre style="background:#f8f8f8; border:1px solid #eee; padding:8px;">{{ expected_output }}</pre>
           </div>
           <div class="mb-3">

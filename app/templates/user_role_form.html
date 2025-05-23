@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Assign/Change User Role{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Assign/Change User Role</h2>
+  <form method="POST">
+    {{ form.hidden_tag() }}
+    <div class="mb-3">
+      {{ form.user.label(class="form-label") }}
+      {{ form.user(class="form-select") }}
+    </div>
+    <div class="mb-3">
+      {{ form.role.label(class="form-label") }}
+      {{ form.role(class="form-select") }}
+    </div>
+    <div class="d-grid">
+      {{ form.submit(class="btn btn-success") }}
+    </div>
+  </form>
+  <a href="{{ url_for('auth.list_users') }}" class="btn btn-secondary mt-3">Back to Users</a>
+</div>
+{% endblock %} 

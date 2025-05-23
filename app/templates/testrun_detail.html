@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Test Run Details</h2>
+  <div class="card mb-3">
+    <div class="card-body">
+      <h5 class="card-title">Test Case: {{ testcase.name }}</h5>
+      <h6 class="card-subtitle mb-2 text-muted">Workflow: {{ workflow.name if workflow else 'N/A' }}</h6>
+      <p class="mb-1"><strong>Status:</strong> <span class="badge {% if testrun.status == 'passed' %}bg-success{% elif testrun.status == 'failed' %}bg-danger{% else %}bg-secondary{% endif %}">{{ testrun.status|capitalize }}</span></p>
+      <p class="mb-1"><strong>Executed At:</strong> {{ testrun.executed_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+      <p class="mb-1"><strong>Duration:</strong> {{ testrun.duration }} seconds</p>
+      <p class="mb-1"><strong>Test Config:</strong> <pre class="mb-0 bg-light p-2">{{ testcase.config }}</pre></p>
+      <hr>
+      <h6>Output / Logs:</h6>
+      <pre class="bg-light p-3">{{ testrun.output }}</pre>
+      <a href="{{ url_for('testcases.list_testcases') }}" class="btn btn-secondary mt-2">Back to Test Cases</a>
+    </div>
+  </div>
+</div>
+{% endblock %} 

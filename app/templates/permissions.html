@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Permissions{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Permissions</h2>
+  <a href="{{ url_for('auth.add_permission') }}" class="btn btn-success mb-3">+ Add Permission</a>
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for perm in permissions %}
+      <tr>
+        <td>{{ perm.name }}</td>
+        <td>{{ perm.description }}</td>
+        <td>
+          <a href="{{ url_for('auth.edit_permission', perm_id=perm.id) }}" class="btn btn-sm btn-warning">Edit</a>
+          <form method="POST" action="{{ url_for('auth.delete_permission', perm_id=perm.id) }}" style="display:inline;">
+            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this permission?');">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %} 

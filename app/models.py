@@ -4,11 +4,31 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import Text, DateTime
 from datetime import datetime
 
+role_permissions = db.Table('role_permissions',
+    db.Column('role_id', db.Integer, db.ForeignKey('role.id'), primary_key=True),
+    db.Column('permission_id', db.Integer, db.ForeignKey('permission.id'), primary_key=True)
+)
+
+class Permission(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), unique=True, nullable=False)
+    description = db.Column(db.String(255))
+
+class Role(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), unique=True, nullable=False)
+    description = db.Column(db.String(255))
+    permissions = db.relationship('Permission', secondary=role_permissions, backref=db.backref('roles', lazy='dynamic'))
+
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
+    email = db.Column(db.String(150), unique=True, nullable=True)
     password = db.Column(db.String(256), nullable=False)
-    role = db.Column(db.String(50), nullable=False)  # e.g., admin, analyst, tester, developer 
+    role_id = db.Column(db.Integer, db.ForeignKey('role.id'))
+    role = db.relationship('Role', backref=db.backref('users', lazy=True))
+    date_joined = db.Column(db.DateTime, default=datetime.utcnow)
+    last_login = db.Column(db.DateTime, nullable=True)
 
     def set_password(self, password):
         self.password = generate_password_hash(password)
@@ -47,6 +67,9 @@ class Workflow(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    testcases_assoc = db.relationship('TestCaseWorkflow', back_populates='workflow', cascade='all, delete-orphan')
+    testcases = db.relationship('TestCase', secondary='testcase_workflow', back_populates='workflows')
+
 class ConverterConfig(db.Model):
     __tablename__ = 'converter_config'
     id = db.Column(db.Integer, primary_key=True)
@@ -66,4 +89,39 @@ class WorkflowAuditLog(db.Model):
     details = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
-    workflow = db.relationship('Workflow', backref=db.backref('audit_logs', lazy=True)) 
+    workflow = db.relationship('Workflow', backref=db.backref('audit_logs', lazy=True))
+
+# Association table for many-to-many TestCase <-> Workflow with sample file
+class TestCaseWorkflow(db.Model):
+    __tablename__ = 'testcase_workflow'
+    id = db.Column(db.Integer, primary_key=True)
+    test_case_id = db.Column(db.Integer, db.ForeignKey('test_case.id'), nullable=False)
+    workflow_id = db.Column(db.Integer, db.ForeignKey('workflow.id'), nullable=False)
+    sample_file = db.Column(db.String(255), nullable=True)  # Path to uploaded sample file
+
+    test_case = db.relationship('TestCase', back_populates='workflows_assoc')
+    workflow = db.relationship('Workflow', back_populates='testcases_assoc')
+
+class TestCase(db.Model):
+    __tablename__ = 'test_case'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), nullable=False)
+    description = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    schedule = db.Column(db.String(64), nullable=True)  # e.g., 'daily', 'weekly', cron, or None
+    next_run_at = db.Column(db.DateTime, nullable=True)
+
+    workflows_assoc = db.relationship('TestCaseWorkflow', back_populates='test_case', cascade='all, delete-orphan')
+    workflows = db.relationship('Workflow', secondary='testcase_workflow', back_populates='testcases')
+
+class TestRun(db.Model):
+    __tablename__ = 'test_run'
+    id = db.Column(db.Integer, primary_key=True)
+    test_case_id = db.Column(db.Integer, db.ForeignKey('test_case.id'), nullable=False)
+    executed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(32), nullable=False)  # e.g., 'passed', 'failed', 'error'
+    output = db.Column(db.Text)  # Store output, logs, or error messages
+    duration = db.Column(db.Float)  # Duration in seconds
+
+    test_case = db.relationship('TestCase', backref=db.backref('test_runs', lazy=True)) 

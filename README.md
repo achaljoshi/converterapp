@@ -1,18 +1,68 @@
 # ConverterApp
 
-A web application for converting between financial file formats (e.g., MT103, Pacs008, pain001, and others) using template-driven mapping, advanced extraction, and live preview features.
-
----
+A comprehensive test case, workflow, and configuration management platform with analytics, scheduling, and universal permissions.
 
 ## Features
-- Manage file type templates and extraction rules
-- Configure converter mappings with variable mapping, defaults, and transformations
-- Live preview and test conversion UI
-- User authentication and role-based access
-- Audit logs for configuration changes
-- **Workflow Audit Log:** Track all workflow create, edit, and delete actions with user, timestamp, and details
-- **Template Viewing:** View/download both TXT and XML templates as plain text from the UI
-- Built with Flask, SQLAlchemy, WTForms, and Jinja2
+- Test case, workflow, converter config, file type, and configuration management
+- **Test Cases can have multiple workflows, each with its own sample file upload**
+- Dynamic UI: Add Workflow button, workflow dropdown, file upload per workflow, remove row
+- Bulk execution, scheduling, and analytics dashboards
+- Universal, fine-grained permission and role system
+- User management (create, edit, deactivate, assign roles)
+- Cloning for all major entities
+- Audit logging for all actions
+- Extensible, modular architecture
+
+## Quickstart
+
+1. **Clone the repo:**
+   ```sh
+   git clone <repo-url>
+   cd converterapp
+   ```
+2. **Create and activate a virtual environment:**
+   ```sh
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+3. **Install dependencies:**
+   ```sh
+   pip install -r requirements.txt
+   ```
+4. **Set up the database:**
+   ```sh
+   flask db upgrade
+   ```
+5. **Run the app:**
+   ```sh
+   flask run
+   ```
+
+## Directory Structure
+
+```
+converterapp/
+  app/           # Main Flask app (blueprints, models, templates)
+  instance/      # Instance config
+  migrations/    # Alembic migrations
+  resources/     # Static resources
+  scripts/       # Utility scripts
+  venv/          # Virtual environment
+  DESIGN.md      # Technical design
+  WORKFLOW.md    # Business/technical workflows
+  API_REFERENCE.md # API endpoints
+  README.md      # This file
+  requirements.txt
+  run.py
+```
+
+## Documentation
+- [DESIGN.md](DESIGN.md) — Technical architecture, ERD, DFD
+- [WORKFLOW.md](WORKFLOW.md) — Business and technical workflows
+- [API_REFERENCE.md](API_REFERENCE.md) — API endpoints
+
+---
+For contributing, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
@@ -61,6 +111,13 @@ pip install -r requirements.txt
   SECRET_KEY=your-production-secret
   SQLALCHEMY_DATABASE_URI=sqlite:///instance/app.db
   ```
+- **Important:**
+  - On **Linux/Mac**, the default `sqlite:///instance/app.db` usually works if you run the app from the project root.
+  - On **Windows**, you may need to use an absolute path, e.g.:
+    ```
+    SQLALCHEMY_DATABASE_URI=sqlite:///C:/Users/youruser/Projects/converterapp/instance/app.db
+    ```
+  - Make sure the `instance` directory exists in your project root and is writable.
 
 ### 5. Initialize the Database
 ```sh
@@ -94,6 +151,7 @@ The app will be available at [http://127.0.0.1:5000](http://127.0.0.1:5000) or t
 - All configuration and extension initialization is handled in `app/__init__.py`.
 - **Workflow Audit Log:** All workflow changes are tracked in the database and viewable from the UI.
 - **Template Viewing:** TXT and XML templates are viewable as plain text from the File Types page.
+- Uploaded files are saved in the `uploads/` directory (auto-created if missing)
 
 ---
 

@@ -92,6 +92,9 @@
                             </div>
                           </div>
                         </div>
+                        <form method="POST" action="{{ url_for('filetypes.clone_filetype', id=ft.id) }}" style="display:inline;" onsubmit="return confirm('Clone this file type?');">
+                            <button type="submit" class="btn btn-sm btn-secondary ms-1">Clone</button>
+                        </form>
                     </td>
                 </tr>
                 {% endfor %}
