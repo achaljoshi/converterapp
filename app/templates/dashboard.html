@@ -1,9 +1,10 @@
 {% set bar_datasets = [] %}
+{% set status_colors = {'pass': '#198754', 'fail': '#dc3545', 'error': '#ffc107'} %}
 {% for status in bar_statuses %}
   {% set _ = bar_datasets.append({
     'label': status|capitalize,
     'data': bar_data[status],
-    'backgroundColor': '#198754' if status == 'passed' else ('#dc3545' if status == 'failed' else '#6c757d')
+    'backgroundColor': status_colors.get(status, '#6c757d')
   }) %}
 {% endfor %}
 {% extends 'base.html' %}
@@ -147,7 +148,7 @@
       labels: {{ pie_labels|tojson }},
       datasets: [{
         data: {{ pie_data|tojson }},
-        backgroundColor: ['#198754', '#dc3545', '#6c757d', '#ffc107']
+        backgroundColor: ['#ffc107', '#dc3545', '#198754'] // Error: yellow, Fail: red, Pass: green
       }]
     },
     options: { responsive: true, plugins: { legend: { position: 'top' } } }
