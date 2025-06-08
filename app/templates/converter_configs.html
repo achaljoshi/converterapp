@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
-{% block title %}Converter Configurations{% endblock %}
+{% block title %}Mapping Rules{% endblock %}
 {% block content %}
 <a href="{{ url_for('config.configuration') }}" class="btn btn-secondary mb-3">Back to General Configs</a>
 <div class="card">
     <div class="card-body">
-        <h3>Converter Configurations</h3>
-        <a href="{{ url_for('converters.add_converter') }}" class="btn btn-primary mb-3">Add Converter Config</a>
+        <h3>Mapping Rules</h3>
+        <a href="{{ url_for('converters.add_converter') }}" class="btn btn-primary mb-3">Add Mapping Rule</a>
         {% if configs %}
         <table class="table table-bordered">
             <thead>
@@ -27,9 +27,9 @@
                     <td>
                         <a href="{{ url_for('converters.edit_converter', config_id=c.id) }}" class="btn btn-sm btn-warning">Edit</a>
                         <form method="POST" action="{{ url_for('converters.delete_converter', config_id=c.id) }}" style="display:inline;">
-                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this converter config?');">Delete</button>
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this mapping rule?');">Delete</button>
                         </form>
-                        <form method="POST" action="{{ url_for('converters.clone_converter_config', id=c.id) }}" style="display:inline;" onsubmit="return confirm('Clone this converter config?');">
+                        <form method="POST" action="{{ url_for('converters.clone_converter_config', id=c.id) }}" style="display:inline;" onsubmit="return confirm('Clone this mapping rule?');">
                             <button type="submit" class="btn btn-sm btn-secondary">Clone</button>
                         </form>
                         {# <a href="{{ url_for('converters.test_converter', config_id=c.id) }}" class="btn btn-sm btn-info">Test</a> #}
@@ -39,7 +39,7 @@
             </tbody>
         </table>
         {% else %}
-        <p>No converter configs found.</p>
+        <p>No mapping rules found.</p>
         {% endif %}
     </div>
 </div>

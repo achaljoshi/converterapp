@@ -1,6 +1,6 @@
-# ConverterApp Design Document
+# Test Accelerator Design Document
 
-This document describes the technical architecture and design of the ConverterApp system.
+This document describes the technical architecture and design of the Test Accelerator system.
 
 ---
 

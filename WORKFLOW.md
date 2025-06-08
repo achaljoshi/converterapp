@@ -1,6 +1,6 @@
-# ConverterApp Workflow Reference
+# Test Accelerator Workflow Reference
 
-This document describes the main business and technical workflows in the ConverterApp system. Use this as a reference for onboarding, development, and process understanding.
+This document describes the main business and technical workflows in the Test Accelerator system. Use this as a reference for onboarding, development, and process understanding.
 
 ---
 

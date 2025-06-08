@@ -8,7 +8,10 @@
 <body>
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <div class="container-fluid">
-        <a class="navbar-brand" href="{{ url_for('dashboard') }}">ConverterApp</a>
+        <a class="navbar-brand d-flex align-items-center" href="{{ url_for('dashboard') }}">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Coforge Logo" style="height:50px; margin-right:10px;">
+            Test Accelerator
+        </a>
         <div class="collapse navbar-collapse">
             <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                 {% if current_user.is_authenticated %}
@@ -16,27 +19,30 @@
                     <a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('testcases.list_testcases') }}">Test Cases</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('converters.test_workflow') }}">Test Workflow</a>
+                    <a class="nav-link" href="{{ url_for('filetypes.list_filetypes') }}">File Types</a>
                 </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="configDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         Configuration
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="configDropdown">
-                        <li><a class="dropdown-item" href="{{ url_for('converters.list_converters') }}">Converter Configs</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('converters.list_converters') }}">Mapping Rules</a></li>
                     </ul>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('converters.converter_test') }}">Converter</a>
+                    <a class="nav-link" href="{{ url_for('converters.test_workflow') }}">Test Workflow</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('converters.data_generator') }}">Data Generator</a>
+                    <a class="nav-link" href="{{ url_for('testcases.list_testcases') }}">Test Cases</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('filetypes.list_filetypes') }}">File Types</a>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="manualExecDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Manual Execution
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="manualExecDropdown">
+                        <li><a class="dropdown-item" href="{{ url_for('converters.converter_test') }}">Converter</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('converters.data_generator') }}">Data Generator</a></li>
+                    </ul>
                 </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">

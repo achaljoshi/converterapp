@@ -1,4 +1,4 @@
-# ConverterApp
+# Test Accelerator
 
 A comprehensive test case, workflow, and configuration management platform with analytics, scheduling, and universal permissions.
 
