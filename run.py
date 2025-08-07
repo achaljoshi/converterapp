@@ -7,4 +7,4 @@ if __name__ == '__main__':
     # Set up logging to console
     logging.basicConfig(level=logging.DEBUG)
     app.logger.setLevel(logging.DEBUG)
-    app.run(debug=True, port=5050) 
+    app.run(debug=True, port=8080) 
