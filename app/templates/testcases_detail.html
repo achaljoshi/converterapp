@@ -3,30 +3,51 @@
 <div class="container mt-4">
   <h2>Test Case: {{ testcase.name }}</h2>
   <div class="mb-3">
-    <strong>Workflows:</strong>
-    {% if testcase.workflows_assoc|length > 0 %}
-      <ul>
-        {% for assoc in testcase.workflows_assoc %}
-          <li>
-            {{ assoc.workflow.name }}
-            {% if assoc.sample_file %}
-              - <a href="/{{ assoc.sample_file }}" download>Download Sample File</a>
-            {% else %}
-              <span class="text-muted">No sample file</span>
-            {% endif %}
-          </li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <span class="text-muted">None</span>
-    {% endif %}
-    <br>
-    <strong>Description:</strong> {{ testcase.description or '-' }}<br>
-    <a href="{{ url_for('testcases.edit_testcase', id=testcase.id) }}" class="btn btn-primary btn-sm">Edit</a>
-    <form method="POST" action="{{ url_for('testcases.clone_testcase', id=testcase.id) }}" style="display:inline-block;" onsubmit="return confirm('Clone this test case?');">
-      <button type="submit" class="btn btn-sm btn-secondary">Clone</button>
-    </form>
-    <a href="{{ url_for('testcases.list_testcases') }}" class="btn btn-secondary btn-sm ms-2">Back to List</a>
+    <div class="row">
+      <div class="col-md-6">
+        <strong>Description:</strong> {{ testcase.description or '-' }}<br>
+        <strong>Schedule:</strong> {{ testcase.schedule or 'None' }}<br>
+        {% if git_repo %}
+          <strong>Git Repository:</strong> 
+          <a href="{{ git_repo.url }}" target="_blank">{{ git_repo.name }}</a> ({{ git_repo.branch }})<br>
+        {% endif %}
+        {% if framework %}
+          <strong>Test Framework:</strong> {{ framework.name }}<br>
+        {% endif %}
+        {% if labels %}
+          <strong>Labels:</strong>
+          {% for label in labels %}
+            <span class="badge bg-primary me-1">{{ label.name }}</span>
+          {% endfor %}<br>
+        {% endif %}
+      </div>
+      <div class="col-md-6">
+        <strong>Workflows:</strong>
+        {% if workflows|length > 0 %}
+          <ul>
+            {% for workflow in workflows %}
+              <li>
+                {{ workflow.name }}
+                {% if workflow.sample_file %}
+                  - <a href="/{{ workflow.sample_file }}" download>Download Sample File</a>
+                {% else %}
+                  <span class="text-muted">No sample file</span>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <span class="text-muted">None</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="mt-3">
+      <a href="{{ url_for('testcases.edit_testcase', id=testcase.id) }}" class="btn btn-primary btn-sm">Edit</a>
+      <form method="POST" action="{{ url_for('testcases.clone_testcase', id=testcase.id) }}" style="display:inline-block;" onsubmit="return confirm('Clone this test case?');">
+        <button type="submit" class="btn btn-sm btn-secondary">Clone</button>
+      </form>
+      <a href="{{ url_for('testcases.list_testcases') }}" class="btn btn-secondary btn-sm ms-2">Back to List</a>
+    </div>
   </div>
   <h4>Test Run History</h4>
   <div class="table-responsive">

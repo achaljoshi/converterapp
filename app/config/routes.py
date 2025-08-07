@@ -89,15 +89,9 @@ def add_configuration():
 @login_required
 @permission_required('config_manage')
 def edit_configuration(config_id):
-    config_obj = Configuration.query.get_or_404(config_id)
-    form = ConfigurationForm(obj=config_obj)
-    # Populate file_type choices from FileType table
-    form.file_type.choices = [(ft.id, ft.name) for ft in FileType.query.order_by(FileType.name).all()]
-    # Set default selected value
-    if request.method == 'GET':
-        file_type_obj = FileType.query.filter_by(name=config_obj.file_type).first()
-        if file_type_obj:
-            form.file_type.data = file_type_obj.id
+    # Configuration model removed - redirect to dashboard
+    flash('Configuration management has been moved to Test Management section.', 'info')
+    return redirect(url_for('dashboard'))
     if form.validate_on_submit():
         # Validate rules as JSON
         rules_data = form.rules.data

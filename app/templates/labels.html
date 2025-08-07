@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Labels</h2>
+    <a href="{{ url_for('labels.create_label') }}" class="btn btn-primary mb-3">Add Label</a>
+    <table class="table table-bordered table-hover">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Color</th>
+                <th>Description</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for label in labels %}
+            <tr>
+                <td>{{ label.name }}</td>
+                <td><span style="background: {{ label.color }}; color: #fff; padding: 2px 8px; border-radius: 4px;">{{ label.color }}</span></td>
+                <td>{{ label.description }}</td>
+                <td>
+                    <a href="{{ url_for('labels.edit_label', label_id=label.id) }}" class="btn btn-sm btn-warning">Edit</a>
+                    <form action="{{ url_for('labels.delete_label', label_id=label.id) }}" method="post" style="display:inline;">
+                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this label?');">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

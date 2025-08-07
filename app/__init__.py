@@ -1,13 +1,12 @@
-from flask import Flask
+from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
-from flask_wtf.csrf import CSRFProtect
 from flask_migrate import Migrate
+import json
 
 # Initialize extensions
 login_manager = LoginManager()
 db = SQLAlchemy()
-csrf = CSRFProtect()
 migrate = Migrate()
 
 def create_app():
@@ -21,10 +20,28 @@ def create_app():
 
     db.init_app(app)
     login_manager.init_app(app)
-    csrf.init_app(app)
     migrate.init_app(app, db)
 
-    from app.testcases import permission_required
+    login_manager.login_view = 'auth.login'
+    login_manager.login_message = 'Please log in to access this page.'
+
+    # Add custom Jinja2 filter for JSON parsing
+    @app.template_filter('from_json')
+    def from_json_filter(value):
+        if isinstance(value, str):
+            try:
+                return json.loads(value)
+            except (json.JSONDecodeError, TypeError):
+                return []
+        return value
+
+    from .models import User
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(int(user_id))
+
+    from .testcases import permission_required
 
     from .auth import auth as auth_blueprint
     app.register_blueprint(auth_blueprint)
@@ -44,66 +61,76 @@ def create_app():
     from .testcases import testcases as testcases_blueprint
     app.register_blueprint(testcases_blueprint)
 
+    from .git_repos import git_repos as git_repos_blueprint
+    app.register_blueprint(git_repos_blueprint)
+
+    from .labels import labels as labels_blueprint
+    app.register_blueprint(labels_blueprint)
+
+    from .frameworks import frameworks as frameworks_blueprint
+    app.register_blueprint(frameworks_blueprint)
+
     # Simple dashboard route for now
     from flask import render_template
     from flask_login import login_required, current_user
+    from .models import TestCase, TestRun, GitRepository, TestFramework, Label
+    from .auth.routes import admin_or_permission_required
+
     @app.route('/dashboard')
     @login_required
-    @permission_required('dashboard_view')
+    @admin_or_permission_required('dashboard_view')
     def dashboard():
-        from app.models import TestCase, TestRun, Workflow
-        from sqlalchemy import func
-        # KPIs
         total_cases = TestCase.query.count()
         total_runs = TestRun.query.count()
+        total_repos = GitRepository.query.count()
+        total_frameworks = TestFramework.query.count()
+        total_labels = Label.query.count()
+        
+        # Get recent test runs
+        recent_runs = TestRun.query.order_by(TestRun.executed_at.desc()).limit(5).all()
+        
+        # Get last run
+        last_run = TestRun.query.order_by(TestRun.executed_at.desc()).first()
+        
+        # Calculate run statistics
         passed_runs = TestRun.query.filter_by(status='passed').count()
         failed_runs = TestRun.query.filter_by(status='failed').count()
         error_runs = TestRun.query.filter(TestRun.status.notin_(['passed', 'failed'])).count()
-        last_run = TestRun.query.order_by(TestRun.executed_at.desc()).first()
-        # Recent runs
-        recent_runs = (
-            TestRun.query.order_by(TestRun.executed_at.desc())
-            .limit(10).all()
-        )
-        # Bar chart: runs by day and status
-        runs_by_day = (
-            db.session.query(
-                func.date(TestRun.executed_at), TestRun.status, func.count()
-            ).group_by(func.date(TestRun.executed_at), TestRun.status)
-            .order_by(func.date(TestRun.executed_at)).all()
-        )
-        # Pie chart: pass/fail distribution
-        status_counts = (
-            db.session.query(TestRun.status, func.count())
-            .group_by(TestRun.status).all()
-        )
-        # Prepare chart data
-        bar_labels = sorted(list(set([str(r[0]) for r in runs_by_day])))
-        bar_statuses = list(set([r[1] for r in runs_by_day]))
-        bar_data = {status: [0]*len(bar_labels) for status in bar_statuses}
-        for i, label in enumerate(bar_labels):
-            for status in bar_statuses:
-                for r in runs_by_day:
-                    if str(r[0]) == label and r[1] == status:
-                        bar_data[status][i] = r[2]
-        pie_labels = [s[0].capitalize() for s in status_counts]
-        pie_data = [s[1] for s in status_counts]
-        return render_template(
-            'dashboard.html',
-            user=current_user,
-            total_cases=total_cases,
-            total_runs=total_runs,
-            passed_runs=passed_runs,
-            failed_runs=failed_runs,
-            error_runs=error_runs,
-            last_run=last_run,
-            recent_runs=recent_runs,
-            bar_labels=bar_labels,
-            bar_statuses=bar_statuses,
-            bar_data=bar_data,
-            pie_labels=pie_labels,
-            pie_data=pie_data
-        )
+        
+        # Prepare chart data (simplified for now)
+        bar_labels = ['Today', 'Yesterday', '2 days ago', '3 days ago', '4 days ago']
+        bar_datasets = [{
+            'label': 'Passed',
+            'data': [passed_runs, 0, 0, 0, 0],
+            'backgroundColor': '#198754'
+        }, {
+            'label': 'Failed', 
+            'data': [failed_runs, 0, 0, 0, 0],
+            'backgroundColor': '#dc3545'
+        }, {
+            'label': 'Error',
+            'data': [error_runs, 0, 0, 0, 0], 
+            'backgroundColor': '#ffc107'
+        }]
+        
+        pie_labels = ['Passed', 'Failed', 'Error']
+        pie_data = [passed_runs, failed_runs, error_runs]
+        
+        return render_template('dashboard.html', 
+                             total_cases=total_cases,
+                             total_runs=total_runs,
+                             total_repos=total_repos,
+                             total_frameworks=total_frameworks,
+                             total_labels=total_labels,
+                             recent_runs=recent_runs,
+                             last_run=last_run,
+                             passed_runs=passed_runs,
+                             failed_runs=failed_runs,
+                             error_runs=error_runs,
+                             bar_labels=bar_labels,
+                             bar_datasets=bar_datasets,
+                             pie_labels=pie_labels,
+                             pie_data=pie_data)
 
     @app.route('/')
     def home():

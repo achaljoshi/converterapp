@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}Git Repositories{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Git Repositories</h2>
+        <a href="{{ url_for('git_repos.create_repository') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Repository
+        </a>
+    </div>
+
+    {% if repositories %}
+    <div class="row">
+        {% for repo in repositories %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">{{ repo.name }}</h5>
+                    <span class="badge bg-{{ 'success' if repo.is_active else 'secondary' }}">
+                        {{ 'Active' if repo.is_active else 'Inactive' }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <p class="card-text"><strong>URL:</strong> {{ repo.url }}</p>
+                    <p class="card-text"><strong>Branch:</strong> {{ repo.branch }}</p>
+                    <p class="card-text"><strong>Type:</strong> 
+                        <span class="badge bg-info">{{ repo.repo_type }}</span>
+                    </p>
+                    {% if repo.test_framework %}
+                    <p class="card-text"><strong>Framework:</strong> 
+                        <span class="badge bg-warning">{{ repo.test_framework.name }}</span>
+                    </p>
+                    {% endif %}
+                    {% if repo.last_sync %}
+                    <p class="card-text"><strong>Last Sync:</strong> {{ repo.last_sync.strftime('%Y-%m-%d %H:%M') }}</p>
+                    {% endif %}
+                    <p class="card-text">
+                        <strong>Test Cases:</strong> 
+                        <span id="test-count-{{ repo.id }}" class="badge bg-success">
+                            {% if repo.local_path %}
+                                <i class="fas fa-spinner fa-spin"></i> Loading...
+                            {% else %}
+                                Not cloned
+                            {% endif %}
+                        </span>
+                    </p>
+                </div>
+                <div class="card-footer">
+                    <div class="btn-group w-100" role="group">
+                        {% if repo.local_path %}
+                        <button type="button" class="btn btn-outline-primary btn-sm pull-repo-btn" 
+                                data-repo-id="{{ repo.id }}" data-repo-name="{{ repo.name }}">
+                            <i class="fas fa-sync-alt"></i> Pull Latest
+                        </button>
+                        <a href="{{ url_for('git_repos.discover_test_cases', repo_id=repo.id) }}" 
+                           class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-search"></i> Discover Tests
+                        </a>
+                        {% else %}
+                        <form method="POST" action="{{ url_for('git_repos.clone_repository', repo_id=repo.id) }}" 
+                              style="display: inline;">
+                            <button type="submit" class="btn btn-outline-success btn-sm">
+                                <i class="fas fa-download"></i> Clone
+                            </button>
+                        </form>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('git_repos.edit_repository', repo_id=repo.id) }}" 
+                           class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        
+                        <button type="button" class="btn btn-outline-danger btn-sm delete-repo-btn" 
+                                data-repo-id="{{ repo.id }}" data-repo-name="{{ repo.name }}">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-git-alt fa-3x text-muted mb-3"></i>
+        <h4 class="text-muted">No Git repositories configured</h4>
+        <p class="text-muted">Add your first repository to start discovering test cases.</p>
+        <a href="{{ url_for('git_repos.create_repository') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Repository
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Repository</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the repository "<span id="repoName"></span>"?</p>
+                <p class="text-danger"><small>This will also delete all associated test cases and local files.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Delete repository functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Load test case counts
+    loadTestCaseCounts();
+    
+    // Add event listeners for delete buttons
+    document.querySelectorAll('.delete-repo-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const repoId = this.getAttribute('data-repo-id');
+            const repoName = this.getAttribute('data-repo-name');
+            deleteRepository(repoId, repoName);
+        });
+    });
+    
+    // Add event listeners for pull buttons
+    document.querySelectorAll('.pull-repo-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const repoId = this.getAttribute('data-repo-id');
+            const repoName = this.getAttribute('data-repo-name');
+            pullRepository(repoId, repoName, this);
+        });
+    });
+});
+
+function deleteRepository(repoId, repoName) {
+    document.getElementById('repoName').textContent = repoName;
+    document.getElementById('deleteForm').action = `/repositories/${repoId}/delete`;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+function pullRepository(repoId, repoName, button) {
+    const originalText = button.innerHTML;
+    
+    // Show loading state
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Pulling...';
+    button.disabled = true;
+    
+    fetch(`/repositories/${repoId}/pull`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update test case count
+            const countElement = document.getElementById(`test-count-${repoId}`);
+            countElement.innerHTML = `${data.test_case_count} tests`;
+            countElement.className = 'badge bg-success';
+            
+            // Show success message
+            showAlert('success', data.message);
+            
+            // Reload page after a short delay to update last sync time
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            showAlert('danger', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('danger', 'An error occurred while pulling the repository.');
+    })
+    .finally(() => {
+        // Restore button state
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+function loadTestCaseCounts() {
+    // Load test case counts for all repositories that are cloned
+    const countElements = document.querySelectorAll('[id^="test-count-"]');
+    
+    countElements.forEach(element => {
+        const repoId = element.id.replace('test-count-', '');
+        
+        fetch(`/repositories/${repoId}/test-count`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                element.innerHTML = `${data.test_case_count} tests`;
+                element.className = 'badge bg-success';
+            } else {
+                element.innerHTML = 'Error';
+                element.className = 'badge bg-danger';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading test count:', error);
+            element.innerHTML = 'Error';
+            element.className = 'badge bg-danger';
+        });
+    });
+}
+
+function showAlert(type, message) {
+    // Create alert element
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Add to page
+    document.body.appendChild(alertDiv);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %} 

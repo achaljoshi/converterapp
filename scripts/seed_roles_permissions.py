@@ -48,7 +48,7 @@ def seed():
         admin = User.query.filter_by(username='admin').first()
         admin_role = Role.query.filter_by(name='admin').first()
         if not admin:
-            admin = User(username='admin', password=generate_password_hash('admin123'), role=admin_role)
+            admin = User(username='admin', password=generate_password_hash('admin123', method='pbkdf2:sha256'), role=admin_role)
             db.session.add(admin)
         db.session.commit()
         print('Seeded roles, permissions, and admin user (admin/admin123)')

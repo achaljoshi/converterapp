@@ -4,36 +4,73 @@
   <h2>{{ action }} Test Case</h2>
   <form method="POST" enctype="multipart/form-data">
     {{ form.hidden_tag() }}
-    <div class="mb-3">
-      {{ form.name.label(class="form-label") }}
-      {{ form.name(class="form-control", placeholder="Enter test case name") }}
-      {% for error in form.name.errors %}
-        <div class="text-danger small">{{ error }}</div>
-      {% endfor %}
-    </div>
-    <div class="mb-3">
-      <label class="form-label">Workflows</label>
-      <div id="workflow-rows"></div>
-      <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="add-workflow-btn">+ Add Workflow</button>
-      <div id="workflow-errors">
-        {% for error in form.workflows.errors %}
-          <div class="text-danger small">{{ error }}</div>
-        {% endfor %}
+    <div class="row">
+      <div class="col-md-6">
+        <div class="mb-3">
+          {{ form.git_repository_id.label(class="form-label") }}
+          {{ form.git_repository_id(class="form-select") }}
+          <small class="form-text text-muted">Select a Git repository to discover test cases</small>
+          {% for error in form.git_repository_id.errors %}
+            <div class="text-danger small">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="mb-3">
+          {{ form.discovered_test_case.label(class="form-label") }}
+          {{ form.discovered_test_case(class="form-select") }}
+          <small class="form-text text-muted">Select a discovered test case to auto-populate fields</small>
+          {% for error in form.discovered_test_case.errors %}
+            <div class="text-danger small">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="mb-3">
+          {{ form.name.label(class="form-label") }}
+          {{ form.name(class="form-control", placeholder="Enter test case name") }}
+          {% for error in form.name.errors %}
+            <div class="text-danger small">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="mb-3">
+          {{ form.description.label(class="form-label") }}
+          {{ form.description(class="form-control", placeholder="Description (optional)") }}
+          {% for error in form.description.errors %}
+            <div class="text-danger small">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="mb-3">
+          {{ form.test_type.label(class="form-label") }}
+          {{ form.test_type(class="form-select") }}
+          {% for error in form.test_type.errors %}
+            <div class="text-danger small">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="mb-3">
+          {{ form.labels.label(class="form-label") }}
+          {{ form.labels(class="form-select", multiple=true) }}
+          {% for error in form.labels.errors %}
+            <div class="text-danger small">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="mb-3">
+          {{ form.schedule.label(class="form-label") }}
+          {{ form.schedule(class="form-select") }}
+          {% for error in form.schedule.errors %}
+            <div class="text-danger small">{{ error }}</div>
+          {% endfor %}
+        </div>
       </div>
-    </div>
-    <div class="mb-3">
-      {{ form.description.label(class="form-label") }}
-      {{ form.description(class="form-control", placeholder="Description (optional)") }}
-      {% for error in form.description.errors %}
-        <div class="text-danger small">{{ error }}</div>
-      {% endfor %}
-    </div>
-    <div class="mb-3">
-      {{ form.schedule.label(class="form-label") }}
-      {{ form.schedule(class="form-select") }}
-      {% for error in form.schedule.errors %}
-        <div class="text-danger small">{{ error }}</div>
-      {% endfor %}
+      <div class="col-md-6">
+        <div class="mb-3">
+          <label class="form-label">Workflows (Optional)</label>
+          <div id="workflow-rows"></div>
+          <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="add-workflow-btn">+ Add Workflow</button>
+          <small class="form-text text-muted">Add workflows to associate with this test case (optional)</small>
+          <div id="workflow-errors">
+            {% for error in form.workflows.errors %}
+              <div class="text-danger small">{{ error }}</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
     </div>
     <button type="submit" class="btn btn-primary">{{ action }}</button>
     <a href="{{ url_for('testcases.list_testcases') }}" class="btn btn-secondary ms-2">Cancel</a>
@@ -43,9 +80,14 @@
 <script>
   // Workflows data from backend
   const workflows = {{ form.workflows.choices|map('list')|list|tojson }}.map(function(w) { return {id: w[0], name: w[1]}; });
+  
+  // Store discovered test cases data
+  let discoveredTestCases = [];
+  
   function getAvailableWorkflows(selected) {
     return workflows.filter(w => !selected.includes(w.id.toString()));
   }
+  
   function createWorkflowRow(idx, selectedId) {
     const row = document.createElement('div');
     row.className = 'row mb-2 align-items-end workflow-row';
@@ -92,6 +134,7 @@
     row.appendChild(col3);
     return row;
   }
+  
   let workflowRows = [];
   function renderWorkflowRowsDOM() {
     const container = document.getElementById('workflow-rows');
@@ -100,10 +143,66 @@
       container.appendChild(createWorkflowRow(idx, row.workflow));
     });
   }
+  
+  // Handle Git repository selection
+  document.getElementById('git_repository_id').addEventListener('change', function() {
+    const selectedRepoId = this.value;
+    const discoveredTestSelect = document.getElementById('discovered_test_case');
+    
+    // Clear discovered test case selection
+    discoveredTestSelect.innerHTML = '<option value="">Select a repository first</option>';
+    discoveredTestCases = [];
+    
+    if (selectedRepoId && selectedRepoId !== '') {
+      // Show loading state
+      discoveredTestSelect.innerHTML = '<option value="">Loading test cases...</option>';
+      
+      // Fetch discovered test cases for the selected repository
+      fetch(`/testcases/discover/${selectedRepoId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            discoveredTestCases = data.test_cases;
+            
+            // Populate the dropdown
+            discoveredTestSelect.innerHTML = '<option value="">Select a test case</option>';
+            data.choices.forEach(choice => {
+              const option = document.createElement('option');
+              option.value = choice[0];
+              option.textContent = choice[1];
+              discoveredTestSelect.appendChild(option);
+            });
+          } else {
+            discoveredTestSelect.innerHTML = '<option value="">No test cases found</option>';
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching test cases:', error);
+          discoveredTestSelect.innerHTML = '<option value="">Error loading test cases</option>';
+        });
+    }
+  });
+  
+  // Handle discovered test case selection
+  document.getElementById('discovered_test_case').addEventListener('change', function() {
+    const selectedValue = this.value;
+    const selectedTestCase = discoveredTestCases.find(tc => tc.name === selectedValue);
+    
+    if (selectedTestCase) {
+      // Auto-populate fields
+      document.getElementById('name').value = selectedTestCase.name;
+      
+      // Update description with repository info
+      const description = `Discovered from ${selectedTestCase.repository} repository\nFile: ${selectedTestCase.file_path}\nFramework: ${selectedTestCase.framework}`;
+      document.getElementById('description').value = description;
+    }
+  });
+  
   document.getElementById('add-workflow-btn').addEventListener('click', function() {
     workflowRows.push({workflow: ''});
     renderWorkflowRowsDOM();
   });
+  
   document.getElementById('workflow-rows').addEventListener('change', function(e) {
     if (e.target.classList.contains('workflow-select')) {
       const idx = parseInt(e.target.closest('.workflow-row').dataset.idx);
@@ -111,6 +210,7 @@
       renderWorkflowRowsDOM();
     }
   });
+  
   document.getElementById('workflow-rows').addEventListener('click', function(e) {
     if (e.target.classList.contains('remove-workflow-btn')) {
       const idx = parseInt(e.target.closest('.workflow-row').dataset.idx);
@@ -118,6 +218,7 @@
       renderWorkflowRowsDOM();
     }
   });
+  
   // If editing, prepopulate rows
   document.addEventListener('DOMContentLoaded', function() {
     {% if form.workflows.data %}

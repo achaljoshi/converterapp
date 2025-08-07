@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action }} Test Framework{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h4>{{ action }} Test Framework</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.name.label(class="form-label") }}
+                                    {{ form.name(class="form-control") }}
+                                    {% if form.name.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.name.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.language.label(class="form-label") }}
+                                    {{ form.language(class="form-select") }}
+                                    {% if form.language.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.language.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control", rows="3") }}
+                            {% if form.description.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.description.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.file_extensions.label(class="form-label") }}
+                                    {{ form.file_extensions(class="form-control", rows="3") }}
+                                    {% if form.file_extensions.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.file_extensions.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">{{ form.file_extensions.description }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.is_active.label(class="form-label") }}
+                                    <div class="form-check">
+                                        {{ form.is_active(class="form-check-input") }}
+                                        <label class="form-check-label" for="{{ form.is_active.id }}">
+                                            Active
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.test_patterns.label(class="form-label") }}
+                                    {{ form.test_patterns(class="form-control", rows="4") }}
+                                    {% if form.test_patterns.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.test_patterns.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">{{ form.test_patterns.description }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.test_name_patterns.label(class="form-label") }}
+                                    {{ form.test_name_patterns(class="form-control", rows="4") }}
+                                    {% if form.test_name_patterns.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.test_name_patterns.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">{{ form.test_name_patterns.description }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.settings.label(class="form-label") }}
+                            {{ form.settings(class="form-control", rows="6") }}
+                            {% if form.settings.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.settings.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">{{ form.settings.description }}</div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.execution_commands.label(class="form-label") }}
+                            {{ form.execution_commands(class="form-control", rows="6") }}
+                            {% if form.execution_commands.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.execution_commands.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">{{ form.execution_commands.description }}</div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.setup_commands.label(class="form-label") }}
+                            {{ form.setup_commands(class="form-control", rows="4") }}
+                            {% if form.setup_commands.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.setup_commands.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">{{ form.setup_commands.description }}</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <h6>🐳 Docker Execution Support</h6>
+                            <p class="text-muted">The system automatically uses Docker containers for test execution when <code>use_docker: true</code> is set. This ensures consistent execution environments without requiring local framework installations.</p>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Supported Docker Images:</h6>
+                                    <ul class="list-unstyled">
+                                        <li><strong>Cucumber:</strong> <code>cucumber/cucumber:latest</code></li>
+                                        <li><strong>Pytest:</strong> <code>python:3.9-slim</code></li>
+                                        <li><strong>Playwright:</strong> <code>mcr.microsoft.com/playwright:v1.40.0-focal</code></li>
+                                        <li><strong>Selenium/TestNG:</strong> <code>openjdk:11-jdk-slim</code></li>
+                                        <li><strong>Jest:</strong> <code>node:18-slim</code></li>
+                                        <li><strong>Cypress:</strong> <code>cypress/included:12.17.4</code></li>
+                                        <li><strong>NUnit:</strong> <code>mcr.microsoft.com/dotnet/sdk:7.0</code></li>
+                                        <li><strong>Robot Framework:</strong> <code>python:3.9-slim</code></li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Docker Features:</h6>
+                                    <ul class="list-unstyled">
+                                        <li>✅ <strong>Isolated Execution:</strong> Each test runs in its own container</li>
+                                        <li>✅ <strong>Volume Mounting:</strong> Repository code mounted into container</li>
+                                        <li>✅ <strong>Setup Commands:</strong> Automatic dependency installation</li>
+                                        <li>✅ <strong>Fallback Support:</strong> Uses local commands if Docker unavailable</li>
+                                        <li>✅ <strong>Resource Limits:</strong> Memory and timeout controls</li>
+                                        <li>✅ <strong>Clean Environment:</strong> Fresh container for each test</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('frameworks.list_frameworks') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Frameworks
+                            </a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Framework Examples -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5>Framework Examples</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Pytest (Python)</h6>
+                            <ul class="list-unstyled small">
+                                <li><strong>File Extensions:</strong> <code>[".py"]</code></li>
+                                <li><strong>Test Name Patterns:</strong> <code>["def (test_\\w+)", "class Test\\w+:\\s*\\n(?:[^\\n]*\\n)*?\\s*def (test_\\w+)"]</code></li>
+                                <li><strong>Settings:</strong> <code>{"extraction_method": "pattern_based", "remove_prefixes": ["test_"], "allowed_chars": "\\w\\s-", "min_length": 2}</code></li>
+                                <li><strong>Execution Commands:</strong> <code>{"command_template": "pytest {file_path}::{test_function} -v --json-report --json-report-file=-", "working_dir": "{repo_path}", "timeout": 300, "success_codes": [0], "max_memory_mb": 1024, "use_docker": true}</code></li>
+                                <li><strong>Setup Commands:</strong> <code>["docker run --rm -v {workspace}:/workspace -w /workspace/repo {image} bash -c \\"pip install -r requirements.txt\\""]</code></li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>TestNG (Java)</h6>
+                            <ul class="list-unstyled small">
+                                <li><strong>File Extensions:</strong> <code>[".java"]</code></li>
+                                <li><strong>Test Name Patterns:</strong> <code>["@Test\\s*\\n\\s*public\\s+void\\s+(test\\w+)"]</code></li>
+                                <li><strong>Settings:</strong> <code>{"extraction_method": "pattern_based", "remove_prefixes": ["test"], "allowed_chars": "\\w\\s-", "min_length": 2}</code></li>
+                                <li><strong>Execution Commands:</strong> <code>{"command_template": "mvn test -Dtest={class_name}#{method_name} -Dtestng.output.format=json", "working_dir": "{repo_path}", "timeout": 300, "success_codes": [0], "max_memory_mb": 2048, "use_docker": true}</code></li>
+                                <li><strong>Setup Commands:</strong> <code>["docker run --rm -v {workspace}:/workspace -w /workspace/repo {image} bash -c \\"mvn clean compile --batch-mode\\""]</code></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <h6>Playwright (JavaScript)</h6>
+                            <ul class="list-unstyled small">
+                                <li><strong>File Extensions:</strong> <code>[".js", ".ts"]</code></li>
+                                <li><strong>Test Name Patterns:</strong> <code>["test\\s*\\(\\s*['\"`]([^'\"`]+)['\"`]", "it\\s*\\(\\s*['\"`]([^'\"`]+)['\"`]"]</code></li>
+                                <li><strong>Settings:</strong> <code>{"extraction_method": "pattern_based", "remove_prefixes": [], "allowed_chars": "\\w\\s-", "min_length": 2}</code></li>
+                                <li><strong>Execution Commands:</strong> <code>{"command_template": "npx playwright test {file_path} --grep \"{test_name}\" --reporter=json", "working_dir": "{repo_path}", "timeout": 300, "success_codes": [0], "max_memory_mb": 1024, "use_docker": true}</code></li>
+                                <li><strong>Setup Commands:</strong> <code>["docker run --rm -v {workspace}:/workspace -w /workspace/repo {image} bash -c \\"npm install\\"", "docker run --rm -v {workspace}:/workspace -w /workspace/repo {image} bash -c \\"npx playwright install\\""]</code></li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Cucumber (Java)</h6>
+                            <ul class="list-unstyled small">
+                                <li><strong>File Extensions:</strong> <code>[".feature", ".java"]</code></li>
+                                <li><strong>Test Name Patterns:</strong> <code>["Scenario:\\s*(.+?)(?:\\s*$|\\s*\\n)", "Scenario Outline:\\s*(.+?)(?:\\s*$|\\s*\\n)"]</code></li>
+                                <li><strong>Settings:</strong> <code>{"extraction_method": "cucumber", "scenario_pattern": "Scenario:\\s*(.+?)(?:\\s*$|\\s*\\n)", "scenario_outline_pattern": "Scenario Outline:\\s*(.+?)(?:\\s*$|\\s*\\n)"}</code></li>
+                                <li><strong>Execution Commands:</strong> <code>{"command_template": "mvn test -Dcucumber.filter.name=\\"{test_name}\\" --batch-mode", "working_dir": "{repo_path}", "timeout": 300, "success_codes": [0], "max_memory_mb": 1024, "use_docker": true}</code></li>
+                                <li><strong>Setup Commands:</strong> <code>["docker run --rm -v {workspace}:/workspace -w /workspace/repo {image} bash -c \\"mvn clean compile --batch-mode\\""]</code></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <h6>Robot Framework (Python)</h6>
+                            <ul class="list-unstyled small">
+                                <li><strong>File Extensions:</strong> <code>[".robot"]</code></li>
+                                <li><strong>Test Name Patterns:</strong> <code>["^[A-Za-z][A-Za-z0-9\\s]*$"]</code></li>
+                                <li><strong>Settings:</strong> <code>{"extraction_method": "robot_framework", "test_cases_section_pattern": "\\*\\*\\*\\s*Test Cases\\s*\\*\\*\\*", "exclude_keywords": ["open browser", "input text"], "max_words": 4}</code></li>
+                                <li><strong>Execution Commands:</strong> <code>{"command_template": "robot --test \"{test_name}\" --output - --report - --log - {file_path}", "working_dir": "{repo_path}", "timeout": 300, "success_codes": [0], "max_memory_mb": 1024, "use_docker": true}</code></li>
+                                <li><strong>Setup Commands:</strong> <code>["docker run --rm -v {workspace}:/workspace -w /workspace/repo {image} bash -c \\"pip install -r requirements.txt\\""]</code></li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>NUnit (C#)</h6>
+                            <ul class="list-unstyled small">
+                                <li><strong>File Extensions:</strong> <code>[".cs"]</code></li>
+                                <li><strong>Test Name Patterns:</strong> <code>["\\[Test\\]\\s*\\n\\s*public\\s+void\\s+(Test\\w+)", "\\[TestMethod\\]\\s*\\n\\s*public\\s+void\\s+(Test\\w+)"]</code></li>
+                                <li><strong>Settings:</strong> <code>{"extraction_method": "pattern_based", "remove_prefixes": ["Test"], "allowed_chars": "\\w\\s-", "min_length": 2}</code></li>
+                                <li><strong>Execution Commands:</strong> <code>{"command_template": "dotnet test {file_path} --filter TestName=\\"{test_name}\\" --logger json", "working_dir": "{repo_path}", "timeout": 300, "success_codes": [0], "max_memory_mb": 1024, "use_docker": true}</code></li>
+                                <li><strong>Setup Commands:</strong> <code>["docker run --rm -v {workspace}:/workspace -w /workspace/repo {image} bash -c \\"dotnet restore\\""]</code></li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <h6>Extraction Methods:</h6>
+                        <ul class="mb-0">
+                            <li><strong>pattern_based:</strong> Uses regex patterns to extract test names</li>
+                            <li><strong>cucumber:</strong> Special handling for Cucumber feature files</li>
+                            <li><strong>robot_framework:</strong> Special handling for Robot Framework files</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-format JSON fields
+document.addEventListener('DOMContentLoaded', function() {
+    const jsonFields = ['file_extensions', 'test_patterns', 'test_name_patterns', 'settings', 'execution_commands', 'setup_commands'];
+    
+    jsonFields.forEach(fieldName => {
+        const field = document.getElementById(fieldName);
+        if (field) {
+            formatJSON(field);
+        }
+    });
+    
+    function formatJSON(field) {
+        try {
+            const value = JSON.parse(field.value);
+            field.value = JSON.stringify(value, null, 2);
+        } catch (e) {
+            // If not valid JSON, leave as is
+        }
+    }
+});
+</script>
+{% endblock %} 

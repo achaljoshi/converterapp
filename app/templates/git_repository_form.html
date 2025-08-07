@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action }} Git Repository{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4>{{ action }} Git Repository</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.name.label(class="form-label") }}
+                                    {{ form.name(class="form-control") }}
+                                    {% if form.name.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.name.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.repo_type.label(class="form-label") }}
+                                    {{ form.repo_type(class="form-select") }}
+                                    {% if form.repo_type.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.repo_type.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.url.label(class="form-label") }}
+                            {{ form.url(class="form-control", placeholder="https://github.com/username/repository.git") }}
+                            {% if form.url.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.url.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">HTTPS or SSH URL of the Git repository</div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.branch.label(class="form-label") }}
+                                    {{ form.branch(class="form-control") }}
+                                    {% if form.branch.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.branch.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.username.label(class="form-label") }}
+                                    {{ form.username(class="form-control", autocomplete="off") }}
+                                    {% if form.username.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.username.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">Username for private repositories</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.password.label(class="form-label") }}
+                            {{ form.password(class="form-control", type="password", autocomplete="new-password", readonly="readonly", onfocus="this.removeAttribute('readonly');") }}
+                            {% if form.password.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.password.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Password or personal access token for private repositories. 
+                                <small class="text-muted">Click to edit (browser autocomplete disabled for security)</small>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.test_framework.label(class="form-label") }}
+                            {{ form.test_framework(class="form-select") }}
+                            {% if form.test_framework.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.test_framework.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Select the test framework used in this repository for better test discovery</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <button type="button" id="test-connection-btn" class="btn btn-outline-info">
+                                <i class="fas fa-plug"></i> Test Connection
+                            </button>
+                            <div id="connection-result" class="mt-2"></div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('git_repos.list_repositories') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Repositories
+                            </a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const testConnectionBtn = document.getElementById('test-connection-btn');
+    const connectionResult = document.getElementById('connection-result');
+    
+    testConnectionBtn.addEventListener('click', function() {
+        const url = document.getElementById('url').value;
+        const branch = document.getElementById('branch').value;
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        
+        if (!url) {
+            connectionResult.innerHTML = '<div class="alert alert-warning">Please enter a Git URL first.</div>';
+            return;
+        }
+        
+        // Show loading state
+        testConnectionBtn.disabled = true;
+        testConnectionBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
+        connectionResult.innerHTML = '<div class="alert alert-info">Testing connection...</div>';
+        
+        // Send test request
+        fetch('{{ url_for("git_repos.test_connection") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                url: url,
+                branch: branch,
+                username: username,
+                password: password
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                connectionResult.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+            } else {
+                connectionResult.innerHTML = `<div class="alert alert-danger">${data.message}</div>`;
+            }
+        })
+        .catch(error => {
+            connectionResult.innerHTML = `<div class="alert alert-danger">Connection test failed: ${error.message}</div>`;
+        })
+        .finally(() => {
+            // Reset button state
+            testConnectionBtn.disabled = false;
+            testConnectionBtn.innerHTML = '<i class="fas fa-plug"></i> Test Connection';
+        });
+    });
+});
+</script>
+{% endblock %} 

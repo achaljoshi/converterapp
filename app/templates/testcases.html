@@ -5,16 +5,20 @@
     <h2>Test Cases</h2>
     <div>
       <a href="{{ url_for('testcases.create_testcase') }}" class="btn btn-success">+ New Test Case</a>
+      <a href="{{ url_for('testcases.execute_testcases') }}" class="btn btn-warning ms-2">🚀 Test Execution</a>
       <a href="{{ url_for('testcases.testcases_auditlog') }}" class="btn btn-outline-secondary ms-2">Audit Log</a>
     </div>
   </div>
-  <form id="bulk-execute-form" method="POST" action="{{ url_for('testcases.bulk_execute_testcases') }}">
+  <form id="bulk-execute-form" method="POST" action="{{ url_for('testcases.execute_testcases') }}">
     <div class="table-responsive">
       <table class="table table-bordered align-middle">
         <thead class="table-light">
           <tr>
             <th scope="col"><input type="checkbox" id="select-all"></th>
             <th scope="col">Name</th>
+            <th scope="col">Repository</th>
+            <th scope="col">Framework</th>
+            <th scope="col">Labels</th>
             <th scope="col">Workflows</th>
             <th scope="col">Last Run</th>
             <th scope="col">Last Status</th>
@@ -27,9 +31,37 @@
             <td><input type="checkbox" name="testcase_ids" value="{{ tc.id }}"></td>
             <td><a href="{{ url_for('testcases.testcase_detail', id=tc.id) }}">{{ tc.name }}</a></td>
             <td>
-              {% if tc.workflows_assoc|length > 0 %}
-                {% for assoc in tc.workflows_assoc %}
-                  {{ assoc.workflow.name }}{% if assoc.sample_file %} <span title="Sample file uploaded">📎</span>{% endif %}{% if not loop.last %}, {% endif %}
+              {% if tc.repository_id %}
+                {% for repo in git_repos %}
+                  {% if repo.id == tc.repository_id %}
+                    <a href="{{ repo.url }}" target="_blank" title="{{ repo.url }}">{{ repo.name }}</a>
+                    <small class="text-muted d-block">{{ repo.branch }}</small>
+                  {% endif %}
+                {% endfor %}
+              {% else %}
+                <span class="text-muted">-</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if tc.repository and tc.repository.test_framework %}
+                <span class="badge bg-info">{{ tc.repository.test_framework.name }}</span>
+              {% else %}
+                <span class="text-muted">-</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if tc.labels|length > 0 %}
+                {% for label in tc.labels %}
+                  <span class="badge bg-primary me-1">{{ label.name }}</span>
+                {% endfor %}
+              {% else %}
+                <span class="text-muted">-</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if tc.workflows|length > 0 %}
+                {% for workflow in tc.workflows %}
+                  {{ workflow.name }}{% if workflow.sample_file %} <span title="Sample file uploaded">📎</span>{% endif %}{% if not loop.last %}, {% endif %}
                 {% endfor %}
               {% else %}
                 <span class="text-muted">None</span>
@@ -58,7 +90,7 @@
               <form method="POST" action="{{ url_for('testcases.delete_testcase', id=tc.id) }}" style="display:inline-block;" onsubmit="return confirm('Delete this test case?');">
                 <button type="submit" class="btn btn-sm btn-danger">Delete</button>
               </form>
-              <form method="POST" action="{{ url_for('testcases.bulk_execute_testcases') }}" style="display:inline-block;">
+              <form method="POST" action="{{ url_for('testcases.execute_testcases') }}" style="display:inline-block;">
                 <input type="hidden" name="testcase_ids" value="{{ tc.id }}">
                 <button type="submit" class="btn btn-sm btn-warning">Run</button>
               </form>

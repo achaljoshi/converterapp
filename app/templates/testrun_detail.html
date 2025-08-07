@@ -5,7 +5,16 @@
   <div class="card mb-3">
     <div class="card-body">
       <h5 class="card-title">Test Case: {{ testcase.name }}</h5>
-      <h6 class="card-subtitle mb-2 text-muted">Workflow: {{ workflow.name if workflow else 'N/A' }}</h6>
+      <h6 class="card-subtitle mb-2 text-muted">
+        Workflows: 
+        {% if workflows|length > 0 %}
+          {% for workflow in workflows %}
+            {{ workflow.name }}{% if not loop.last %}, {% endif %}
+          {% endfor %}
+        {% else %}
+          N/A
+        {% endif %}
+      </h6>
       <p class="mb-1"><strong>Status:</strong> <span class="badge {% if testrun.status == 'passed' %}bg-success{% elif testrun.status == 'failed' %}bg-danger{% else %}bg-secondary{% endif %}">{{ testrun.status|capitalize }}</span></p>
       <p class="mb-1"><strong>Executed At:</strong> {{ testrun.executed_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
       <p class="mb-1"><strong>Duration:</strong> {{ testrun.duration }} seconds</p>

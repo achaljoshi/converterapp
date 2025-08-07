@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block title %}Discover Test Cases - {{ repository.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Discover Test Cases</h2>
+            <p class="text-muted">Repository: {{ repository.name }}</p>
+        </div>
+        <a href="{{ url_for('git_repos.list_repositories') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Repositories
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Repository Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>URL:</strong> {{ repository.url }}</p>
+                            <p><strong>Branch:</strong> {{ repository.branch }}</p>
+                            <p><strong>Type:</strong> <span class="badge bg-info">{{ repository.repo_type }}</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Framework:</strong> 
+                                {% if repository.test_framework %}
+                                    <span class="badge bg-warning">{{ repository.test_framework.name }}</span>
+                                {% else %}
+                                    <span class="text-muted">Not specified</span>
+                                {% endif %}
+                            </p>
+                            <p><strong>Last Sync:</strong> 
+                                {% if repository.last_sync %}
+                                    {{ repository.last_sync.strftime('%Y-%m-%d %H:%M') }}
+                                {% else %}
+                                    <span class="text-muted">Never</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if tests %}
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5>Discovered Test Cases ({{ tests|length }})</h5>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="selectAllTests()">
+                        <i class="fas fa-check-square"></i> Select All
+                    </button>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('git_repos.import_discovered_tests', repo_id=repository.id) }}">
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="label_id" class="form-label">Apply Label (Optional)</label>
+                                <select name="label_id" id="label_id" class="form-select">
+                                    <option value="">-- No Label --</option>
+                                    {% for label_id, label_name in form.labels.choices %}
+                                    <option value="{{ label_id }}">{{ label_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-8 d-flex align-items-end">
+                                <button type="submit" class="btn btn-success" id="import-btn" disabled>
+                                    <i class="fas fa-download"></i> Import Selected Tests
+                                </button>
+                                <span class="ms-2 text-muted" id="selected-count">0 selected</span>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th width="50">
+                                            <input type="checkbox" id="select-all" class="form-check-input">
+                                        </th>
+                                        <th>Test Name</th>
+                                        <th>File Path</th>
+                                        <th>Framework</th>
+                                        <th>Type</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for test in tests %}
+                                    <tr>
+                                        <td>
+                                            <input type="checkbox" name="selected_tests" value="{{ test|tojson|safe }}" 
+                                                   class="form-check-input test-checkbox">
+                                        </td>
+                                        <td>
+                                            <strong>{{ test.name }}</strong>
+                                            {% if test.description %}
+                                            <br><small class="text-muted">{{ test.description }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <code>{{ test.file_path }}</code>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ test.framework }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">{{ repository.repo_type }}</span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">No Test Cases Found</h4>
+                    <p class="text-muted">
+                        No test cases were discovered in this repository. 
+                        This could be due to:
+                    </p>
+                    <ul class="text-muted text-start d-inline-block">
+                        <li>No test framework specified</li>
+                        <li>Test files don't match the framework patterns</li>
+                        <li>Repository structure is different than expected</li>
+                    </ul>
+                    <div class="mt-3">
+                        <a href="{{ url_for('git_repos.edit_repository', repo_id=repository.id) }}" class="btn btn-primary">
+                            <i class="fas fa-edit"></i> Edit Repository Settings
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllCheckbox = document.getElementById('select-all');
+    const testCheckboxes = document.querySelectorAll('.test-checkbox');
+    const importBtn = document.getElementById('import-btn');
+    const selectedCount = document.getElementById('selected-count');
+    
+    // Handle select all checkbox
+    selectAllCheckbox.addEventListener('change', function() {
+        testCheckboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+        updateImportButton();
+    });
+    
+    // Handle individual checkboxes
+    testCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateSelectAllState();
+            updateImportButton();
+        });
+    });
+    
+    function updateSelectAllState() {
+        const checkedCount = document.querySelectorAll('.test-checkbox:checked').length;
+        const totalCount = testCheckboxes.length;
+        
+        if (checkedCount === 0) {
+            selectAllCheckbox.indeterminate = false;
+            selectAllCheckbox.checked = false;
+        } else if (checkedCount === totalCount) {
+            selectAllCheckbox.indeterminate = false;
+            selectAllCheckbox.checked = true;
+        } else {
+            selectAllCheckbox.indeterminate = true;
+        }
+    }
+    
+    function updateImportButton() {
+        const checkedCount = document.querySelectorAll('.test-checkbox:checked').length;
+        importBtn.disabled = checkedCount === 0;
+        selectedCount.textContent = `${checkedCount} selected`;
+    }
+    
+    // Initialize state
+    updateSelectAllState();
+    updateImportButton();
+});
+
+function selectAllTests() {
+    const selectAllCheckbox = document.getElementById('select-all');
+    selectAllCheckbox.checked = true;
+    selectAllCheckbox.dispatchEvent(new Event('change'));
+}
+</script>
+{% endblock %} 
