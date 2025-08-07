@@ -60,12 +60,21 @@ The application automatically detects the correct path for your Windows machine:
 pip install email_validator==2.1.0
 ```
 
-Or update your requirements.txt and reinstall:
+#### 2. JSON Schema Error
+**Error:** `ModuleNotFoundError: No module named 'jsonschema'`
+
+**Solution:**
+```cmd
+pip install jsonschema==4.21.1
+```
+
+#### 3. General Missing Dependencies
+**Solution:** Update your requirements.txt and reinstall:
 ```cmd
 pip install -r requirements.txt
 ```
 
-#### 2. Database Path Issues
+#### 4. Database Path Issues
 **Error:** `sqlite3.OperationalError: unable to open database file`
 
 **Solution:**
@@ -73,7 +82,7 @@ pip install -r requirements.txt
 - Ensure you have write permissions to the project directory
 - Try running as administrator if needed
 
-#### 3. Virtual Environment Issues
+#### 5. Virtual Environment Issues
 **Error:** `'venv' is not recognized as an internal or external command`
 
 **Solution:**
