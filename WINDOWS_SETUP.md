@@ -68,13 +68,29 @@ pip install email_validator==2.1.0
 pip install jsonschema==4.21.1
 ```
 
-#### 3. General Missing Dependencies
+#### 3. APScheduler Error
+**Error:** `ModuleNotFoundError: No module named 'apscheduler'`
+
+**Solution:**
+```cmd
+pip install APScheduler==3.10.4
+```
+
+#### 4. LXML Error
+**Error:** `ModuleNotFoundError: No module named 'lxml'`
+
+**Solution:**
+```cmd
+pip install lxml==4.9.3
+```
+
+#### 5. General Missing Dependencies
 **Solution:** Update your requirements.txt and reinstall:
 ```cmd
 pip install -r requirements.txt
 ```
 
-#### 4. Database Path Issues
+#### 6. Database Path Issues
 **Error:** `sqlite3.OperationalError: unable to open database file`
 
 **Solution:**
@@ -82,7 +98,7 @@ pip install -r requirements.txt
 - Ensure you have write permissions to the project directory
 - Try running as administrator if needed
 
-#### 5. Virtual Environment Issues
+#### 7. Virtual Environment Issues
 **Error:** `'venv' is not recognized as an internal or external command`
 
 **Solution:**
