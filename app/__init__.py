@@ -14,7 +14,10 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(DefaultConfig)
     app.config['SECRET_KEY'] = 'your-secret-key'  # Change this in production
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////Users/storezadeveloper/Projects/converterapp/instance/app.db'
+    # Use relative path for cross-platform compatibility
+    import os
+    db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'instance', 'app.db')
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['WTF_CSRF_ENABLED'] = False
 

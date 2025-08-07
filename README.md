@@ -91,7 +91,7 @@ cd converterapp
 
 ### 2. Create a Virtual Environment
 **On Windows:**
-```sh
+```cmd
 python -m venv venv
 venv\Scripts\activate
 ```
@@ -100,6 +100,8 @@ venv\Scripts\activate
 python3 -m venv venv
 source venv/bin/activate
 ```
+
+> **📖 Windows Users:** See [WINDOWS_SETUP.md](WINDOWS_SETUP.md) for detailed Windows-specific instructions.
 
 > **Note:**  
 > The `venv/` folder (your virtual environment) is excluded from version control via `.gitignore`.  
@@ -120,12 +122,10 @@ pip install -r requirements.txt
   SECRET_KEY=your-production-secret
   SQLALCHEMY_DATABASE_URI=sqlite:///instance/app.db
   ```
-- **Important:**
-  - On **Linux/Mac**, the default `sqlite:///instance/app.db` usually works if you run the app from the project root.
-  - On **Windows**, you may need to use an absolute path, e.g.:
-    ```
-    SQLALCHEMY_DATABASE_URI=sqlite:///C:/Users/youruser/Projects/converterapp/instance/app.db
-    ```
+  - **Important:**
+  - The application now uses **cross-platform database paths** that work on all operating systems.
+  - The database will be automatically created at `instance/app.db` relative to your project root.
+  - **Windows Users:** The path is automatically converted to use Windows-style separators.
   - Make sure the `instance` directory exists in your project root and is writable.
 
 ### 5. Initialize the Database
