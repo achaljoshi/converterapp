@@ -19,6 +19,8 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+> **⚠️ Important:** If you encounter an error about `email_validator`, make sure you have the latest version of `requirements.txt` which includes this dependency.
+
 ### 4. Database Configuration
 The application now uses cross-platform database paths that work on Windows. The database will be created at:
 ```
@@ -45,6 +47,40 @@ python run.py
 
 ### Database Path
 The application automatically detects the correct path for your Windows machine:
+
+## 🚨 Troubleshooting
+
+### Common Windows Issues
+
+#### 1. Email Validator Error
+**Error:** `Exception: Install 'email_validator' for email validation support.`
+
+**Solution:**
+```cmd
+pip install email_validator==2.1.0
+```
+
+Or update your requirements.txt and reinstall:
+```cmd
+pip install -r requirements.txt
+```
+
+#### 2. Database Path Issues
+**Error:** `sqlite3.OperationalError: unable to open database file`
+
+**Solution:**
+- Make sure the `instance` folder exists in your project root
+- Ensure you have write permissions to the project directory
+- Try running as administrator if needed
+
+#### 3. Virtual Environment Issues
+**Error:** `'venv' is not recognized as an internal or external command`
+
+**Solution:**
+```cmd
+python -m venv venv
+venv\Scripts\activate
+```
 - **Database Location:** `converterapp\instance\app.db`
 - **Backup Location:** `converterapp\instance\app.db.backup`
 
