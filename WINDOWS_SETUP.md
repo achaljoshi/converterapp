@@ -52,12 +52,12 @@ The application automatically detects the correct path for your Windows machine:
 
 ### Common Windows Issues
 
-#### 1. Email Validator Error
-**Error:** `Exception: Install 'email_validator' for email validation support.`
+#### 1. Flask-WTF Error
+**Error:** `ModuleNotFoundError: No module named 'flask_wtf'`
 
 **Solution:**
 ```cmd
-pip install email_validator==2.1.0
+pip install Flask-WTF==1.2.1
 ```
 
 #### 2. JSON Schema Error
@@ -65,32 +65,24 @@ pip install email_validator==2.1.0
 
 **Solution:**
 ```cmd
-pip install jsonschema==4.21.1
+pip install jsonschema==4.22.0
 ```
 
-#### 3. APScheduler Error
-**Error:** `ModuleNotFoundError: No module named 'apscheduler'`
-
-**Solution:**
-```cmd
-pip install APScheduler==3.10.4
-```
-
-#### 4. LXML Error
+#### 3. LXML Error
 **Error:** `ModuleNotFoundError: No module named 'lxml'`
 
 **Solution:**
 ```cmd
-pip install lxml==4.9.3
+pip install lxml==5.2.1
 ```
 
-#### 5. General Missing Dependencies
+#### 4. General Missing Dependencies
 **Solution:** Update your requirements.txt and reinstall:
 ```cmd
 pip install -r requirements.txt
 ```
 
-#### 6. Database Path Issues
+#### 5. Database Path Issues
 **Error:** `sqlite3.OperationalError: unable to open database file`
 
 **Solution:**
@@ -98,7 +90,7 @@ pip install -r requirements.txt
 - Ensure you have write permissions to the project directory
 - Try running as administrator if needed
 
-#### 7. Virtual Environment Issues
+#### 6. Virtual Environment Issues
 **Error:** `'venv' is not recognized as an internal or external command`
 
 **Solution:**
